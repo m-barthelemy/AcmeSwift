@@ -40,21 +40,21 @@ public class AcmeSwift {
     public func syncShutdown() throws {
         try client.syncShutdown()
     }
+}
+
+public struct AcmeServer {
+    /// The default, production Let's Encrypt endpoint
+    public static var letsEncrypt: URL {
+        URL(string: "https://acme-v02.api.letsencrypt.org/directory")!
+    }
     
-    public struct AcmeServer {
-        /// The default, production Let's Encrypt endpoint
-        public static var letsEncrypt: URL {
-            URL(string: "https://acme-v02.api.letsencrypt.org/directory")!
-        }
-        
-        /// The staging Let's Encrypt endpoint, for tests. Issues certificate not recognized by clients/browsers
-        public static var letsEncryptStaging: URL {
-            URL(string: "https://acme-staging-v02.api.letsencrypt.org/directory")!
-        }
-        
-        /// A custom URL to a service compatible with ACMEv2 protocol
-        public static func custom(url: URL) -> URL {
-            return url
-        }
+    /// The staging Let's Encrypt endpoint, for tests. Issues certificate not recognized by clients/browsers
+    public static var letsEncryptStaging: URL {
+        URL(string: "https://acme-staging-v02.api.letsencrypt.org/directory")!
+    }
+    
+    /// A custom URL to a service compatible with ACMEv2 protocol
+    public static func custom(url: URL) -> URL {
+        return url
     }
 }

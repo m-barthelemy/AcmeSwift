@@ -3,12 +3,8 @@ import XCTest
 
 final class AcmeSwiftTests: XCTestCase {
     func testExample() async throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-        //XCTAssertEqual(AcmeSwift().text, "Hello, World!")
         
-        let client = try await AcmeSwift()
+        let client = try await AcmeSwift(acmeEndpoint: AcmeServer.letsEncryptStaging)
         print("\n directory=\(client.directory)")
         defer{try! client.syncShutdown()}
     }
