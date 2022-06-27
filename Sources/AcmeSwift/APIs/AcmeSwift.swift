@@ -19,13 +19,25 @@ public class AcmeSwift {
     internal let server: URL
     internal let client: HTTPClient
     private let logger: Logger
+    public let directory: AcmeDirectory
     
-    public init(client: HTTPClient = .init(eventLoopGroupProvider: .createNew), acmeEndpoint: URL = AcmeServer.letsEncrypt, logger: Logger = Logger.init(label: "AcmeSwift")) {
+    public init(client: HTTPClient = .init(eventLoopGroupProvider: .createNew), acmeEndpoint: URL = AcmeServer.letsEncrypt, logger: Logger = Logger.init(label: "AcmeSwift")) async throws {
         self.client = client
         self.server = acmeEndpoint
         self.logger = logger
         
         self.decoder = JSONDecoder()
+        
+        var request = HTTPClientRequest.init(url: acmeEndpoint.absoluteString)
+        request.method = .GET
+        self.directory = try await self.client.execute(request, deadline: .now() + TimeAmount.seconds(15), logger: self.logger)
+            .decode(as: AcmeDirectory.self)
+        
+    }
+    
+    /// The client needs to be shutdown otherwise it can crash on exit.
+    public func syncShutdown() throws {
+        try client.syncShutdown()
     }
     
     public struct AcmeServer {

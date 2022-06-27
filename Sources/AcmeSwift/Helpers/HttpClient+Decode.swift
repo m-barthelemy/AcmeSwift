@@ -1,0 +1,48 @@
+import Foundation
+import NIO
+import AsyncHTTPClient
+import Logging
+
+extension HTTPClientResponse {
+    
+    public enum BodyError : Swift.Error {
+        case noBodyData
+    }
+    
+    /// Decode the response body as T using the given decoder.
+    ///
+    /// - parameters:
+    ///     - type: The type to decode.  Must conform to Decoable.
+    ///     - decoder: The decoder used to decode the reponse body.  Defaults to JSONDecoder.
+    /// - returns: A future decoded type.
+    /// - throws: BodyError.noBodyData when no body is found in reponse.
+    public func decode<T : Decodable>(as type: T.Type, decoder: Decoder = JSONDecoder()) async throws -> T {
+        try checkStatusCode()
+        var body = try await self.body.collect(upTo: 1024 * 1024) // 1 MB
+        /*if T.self == NoBody.self || T.self == NoBody?.self {
+            return NoBody() as! T
+        }*/
+        
+        guard let data = body.readData(length: body.readableBytes) else {
+            throw AcmeError.dataCorrupted("Unable to read Data from response body buffer")
+        }
+        return try decoder.decode(type, from: Data(bytes: data))
+    }
+    
+    fileprivate func checkStatusCode() throws {
+        guard 200...299 ~= self.status.code else {
+            throw AcmeError.errorCode(self.status.code, nil)
+        }
+    }
+    
+}
+
+public enum AcmeError: Error {
+    case dataCorrupted(String)
+    case errorCode(UInt, String?)
+}
+
+public protocol Decoder {
+    func decode<T>(_ type: T.Type, from: Data) throws -> T where T : Decodable
+}
+extension JSONDecoder : Decoder {}
