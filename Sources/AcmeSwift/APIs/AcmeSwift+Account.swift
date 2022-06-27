@@ -10,10 +10,39 @@ extension AcmeSwift {
     public struct AccountAPI {
         fileprivate var client: AcmeSwift
         
-        /// Creates a new account on the ACMEv2 provider
-        public func create() async throws {
-            
+        /// Gets an existing account on the ACMEv2 provider.
+        /// - Parameters:
+        ///   - contacts: Email addresses of the contact points for this account.
+        /// - Throws: Errors that can occur when executing the request.
+        /// - Returns: Returns  the `Account`.
+        public func get(contacts: [String]) async throws {
+            let ep = CreateAccountEndpoint(
+                spec: .init(
+                    contact: contacts,
+                    termsOfServiceAgreed: true,
+                    onlyReturnExisting: true,
+                    externalAccountBinding: nil
+                )
+            )
         }
+        
+        /// Creates a new account on the ACMEv2 provider.
+        /// - Parameters:
+        ///   - contacts: Email addresses of the contact points for this account.
+        ///   - acceptTOS: Automatically accept the ACMEv2 provider Terms Of Service.
+        /// - Throws: Errors that can occur when executing the request.
+        /// - Returns: Returns  an `Account` that can be saves for future connections.
+        public func create(contacts: [String], acceptTOS: Bool) async throws {
+            let ep = CreateAccountEndpoint(
+                spec: .init(
+                    contact: contacts,
+                    termsOfServiceAgreed: acceptTOS,
+                    onlyReturnExisting: false,
+                    externalAccountBinding: nil
+                )
+            )
+        }
+        
     }
         
 }

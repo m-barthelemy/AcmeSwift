@@ -15,6 +15,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.10.0"),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.18.0"),
+        .package(url: "https://github.com/vapor/jwt-kit.git", from: "4.6.0")
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -24,6 +25,7 @@ let package = Package(
             dependencies: [
                 .product(name: "AsyncHTTPClient", package: "async-http-client"),
                 .product(name: "NIO", package: "swift-nio"),
+                .product(name: "JWTKit", package: "jwt-kit"),
             ]),
         .testTarget(
             name: "AcmeSwiftTests",

@@ -17,27 +17,37 @@ extension HTTPClientResponse {
     /// - returns: A future decoded type.
     /// - throws: BodyError.noBodyData when no body is found in reponse.
     public func decode<T : Decodable>(as type: T.Type, decoder: Decoder = JSONDecoder()) async throws -> T {
-        try checkStatusCode()
+        try await checkStatusCode()
         var body = try await self.body.collect(upTo: 2 * 1024 * 1024) // 2 MB
         /*if T.self == NoBody.self || T.self == NoBody?.self {
             return NoBody() as! T
         }*/
         
         guard let data = body.readData(length: body.readableBytes) else {
-            throw AcmeError.dataCorrupted("Unable to read Data from response body buffer")
+            throw AcmeUnspecifiedError.dataCorrupted("Unable to read Data from response body buffer")
         }
         return try decoder.decode(type, from: Data(bytes: data))
     }
     
-    fileprivate func checkStatusCode() throws {
+    fileprivate func checkStatusCode() async throws {
         guard 200...299 ~= self.status.code else {
-            throw AcmeError.errorCode(self.status.code, nil)
+            var body = try await self.body.collect(upTo: 1 * 1024 * 1024)
+            
+            let decoder = JSONDecoder()
+            if let data = body.readData(length: body.readableBytes) {
+                if let error = try? await JSONDecoder().decode(AcmeResponseError.self, from: data) {
+                    throw error
+                }
+                throw AcmeUnspecifiedError.errorCode(self.status.code, String(data: data, encoding: .utf8))
+            }
+            throw AcmeUnspecifiedError.errorCode(self.status.code, self.status.reasonPhrase)
         }
     }
     
 }
 
-public enum AcmeError: Error {
+public enum AcmeUnspecifiedError: Error {
+    case noNonceReturned
     case dataCorrupted(String)
     case errorCode(UInt, String?)
 }
