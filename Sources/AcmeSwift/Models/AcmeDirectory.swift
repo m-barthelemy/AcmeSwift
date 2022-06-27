@@ -4,6 +4,8 @@ import Foundation
 public struct AcmeDirectory: Codable {
     public let newAuthz: URL?
     public let newNonce: URL
+    
+    /// The endpoint to call in order to create a new `Account`.
     public let newAccount: URL
     public let newOrder: URL
     public let revokeCert: URL
@@ -12,8 +14,14 @@ public struct AcmeDirectory: Codable {
     
     public struct Meta: Codable {
         public let termsOfService: URL?
+        
+        /// The web page of the ACME provider.
         public let website: URL?
+        
+        /// The Certificate Authorities that can issue certificates via the ACMEv2 provider.
+        /// This can be used to configure your domains CAA records.
         public let caaIdentities: [String]?
+        
         public let externalAccountRequired: Bool?
     }
 }
