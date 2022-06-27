@@ -9,6 +9,11 @@ extension AcmeSwift {
     
     public struct AccountAPI {
         fileprivate var client: AcmeSwift
+        
+        /// Creates a new account on the ACMEv2 provider
+        public func create() async throws {
+            
+        }
     }
         
 }

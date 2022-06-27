@@ -7,6 +7,8 @@ import Logging
 
 /// The entry point for Acmev2 client commands.
 public class AcmeSwift {
+    /// Information about the endpoints of the ACMEv2 server
+    public let directory: AcmeDirectory
     
     private let headers = HTTPHeaders([
         ("Host", "localhost"),
@@ -15,11 +17,10 @@ public class AcmeSwift {
     ])
     
     private let decoder: JSONDecoder
-    
     internal let server: URL
     internal let client: HTTPClient
     private let logger: Logger
-    public let directory: AcmeDirectory
+    
     
     public init(client: HTTPClient = .init(eventLoopGroupProvider: .createNew), acmeEndpoint: URL = AcmeServer.letsEncrypt, logger: Logger = Logger.init(label: "AcmeSwift")) async throws {
         self.client = client

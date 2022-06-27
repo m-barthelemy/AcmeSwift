@@ -18,7 +18,7 @@ extension HTTPClientResponse {
     /// - throws: BodyError.noBodyData when no body is found in reponse.
     public func decode<T : Decodable>(as type: T.Type, decoder: Decoder = JSONDecoder()) async throws -> T {
         try checkStatusCode()
-        var body = try await self.body.collect(upTo: 1024 * 1024) // 1 MB
+        var body = try await self.body.collect(upTo: 2 * 1024 * 1024) // 2 MB
         /*if T.self == NoBody.self || T.self == NoBody?.self {
             return NoBody() as! T
         }*/
