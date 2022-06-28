@@ -3,10 +3,11 @@ import Foundation
 /// Account information returned when calling `get()` or `create()`
 public struct AcmeAccountInfo: Codable {
     
-    /// ID of the Account
-    internal(set) public var id: URL?
+    /// URL containing the ID of the Account
+    /// This URL is used to performa some account management operations.
+    internal(set) public var url: URL?
     
-    /// Information about the Account private key in JWK format
+    /// Information about the Account public key in JWK format
     public let key: JWK
     
     /// The PEM representation of the private key for this Account
@@ -15,7 +16,7 @@ public struct AcmeAccountInfo: Codable {
     /// The contact entries
     public let contact: [String]
     
-    ///
+    /// Source IP (as seen by the ACME servers) from which the Account was created
     public let initialIp: String
     
     /// Date when the Account was created

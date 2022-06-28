@@ -16,17 +16,19 @@ final class AcmeSwiftTests: XCTestCase {
             eventLoopGroupProvider: .createNew,
             configuration: config
         )
-        let client = try await AcmeSwift(client: http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
-        defer{try! client.syncShutdown()}
-        print("\n directory=\(client.directory)")
         
         do {
+            let client = try await AcmeSwift(client: http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
+            defer{try? client.syncShutdown()}
+            print("\n directory=\(client.directory)")
             let nonce = try await client.getNonce()
             print("\n••• Nonce: \(nonce)")
-            
-            let newAccount = try await client.account.create(contacts: ["bonsouere3456@gmail.com"], acceptTOS: true)
+            let newAccount = try await client.account.create(contacts: ["bonsouere3456@gmail.com", "bonsouere+299@gmail.com"], acceptTOS: true)
             print("\n•••• Response = \(newAccount)")
             
+            let newAccountCli = try await AcmeSwift(login: .init(contacts: newAccount.contact, pemKey: newAccount.privateKeyPem!), client: http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
+            defer{try? newAccountCli.syncShutdown()}
+            try await newAccountCli.account.deactivate()
             
             let privateKeyPem = """
             -----BEGIN PRIVATE KEY-----
@@ -37,6 +39,7 @@ final class AcmeSwiftTests: XCTestCase {
             """
             let login = try AccountCredentials(contacts: ["bonsouere3456@gmail.com"], pemKey: privateKeyPem)
             let existingclient = try await AcmeSwift(login: login, client: http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
+            defer{try? existingclient.syncShutdown()}
             let account = try await existingclient.account.get()
             print("\n•••• Response = \(account)")
             

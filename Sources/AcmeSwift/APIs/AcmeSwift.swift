@@ -18,6 +18,8 @@ public class AcmeSwift {
     ])
     
     internal let login: AccountCredentials?
+    internal var accountURL: URL?
+    
     internal let server: URL
     internal let client: HTTPClient
     private let logger: Logger

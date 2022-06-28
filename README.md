@@ -1,6 +1,6 @@
 # AcmeSwift
 
-This is a Let's Encrypt (ACME v2) client written in Swift. 
+This is a **work in progress** Let's Encrypt (ACME v2) client written in Swift. 
 
 It fully uses the Swift concurrency features introduced with Swift 5.5 (`async`/`await`).
 
@@ -39,7 +39,21 @@ Reuse a previously created account:
 let account = acme.account.use(.......)
 ```
 
+Deactivate an existing account:
+
+⚠️ Only use this if you are absolutely certain that the account needs to be permanently deactivated. there is no going back.
+
+```swift
+
+try await acme.account.deactivate()
+```
 
 ### Orders (certificate requests)
 
+ Create an order for a new certificate:
+ 
+ ```swift
+ 
+ let order = try await acme.order.create(["mydomain.com", "www.mydomain.com"])
+ ```
  

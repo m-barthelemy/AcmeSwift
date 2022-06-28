@@ -18,7 +18,7 @@ extension AcmeSwift {
         /// - Returns: Returns  the `Account`.
         public func get() async throws -> AcmeAccountInfo {
             guard let login = self.client.login else {
-                throw AcmeError.mustBeAuthenticated("\(AcmeSwift.self) must be called with a \(AccountCredentials.self)")
+                throw AcmeError.mustBeAuthenticated("\(AcmeSwift.self).init() must be called with an \(AccountCredentials.self)")
             }
             let ep = CreateAccountEndpoint(
                 directory: self.client.directory,
@@ -32,7 +32,7 @@ extension AcmeSwift {
             
             var (info, headers) = try await self.client.run(ep, privateKey: login.key)
             info.privateKeyPem = login.key.pemRepresentation
-            info.id = URL(string: headers["Location"].first ?? "")
+            info.url = URL(string: headers["Location"].first ?? "")
             return info
         }
         
@@ -66,20 +66,30 @@ extension AcmeSwift {
             
             var (info, headers) = try await self.client.run(ep, privateKey: privateKey)
             info.privateKeyPem = privateKey.pemRepresentation
-            info.id = URL(string: headers["Location"].first ?? "")
+            info.url = URL(string: headers["Location"].first ?? "")
             return info
         }
         
         
         public func update() async throws {
-            
+            guard let login = self.client.login else {
+                throw AcmeError.mustBeAuthenticated("\(AcmeSwift.self).init() must be called with an \(AccountCredentials.self)")
+            }
         }
         
         /// Deactivate an ACME Account/.
         /// Certificates issued by the account prior to deactivation will normally not be revoked.
         /// WARNING: ACME does not provide a way to reactivate a deactivated account.
         public func deactivate() async throws {
-            
+            guard let login = self.client.login else {
+                throw AcmeError.mustBeAuthenticated("\(AcmeSwift.self).init() must be called with an \(AccountCredentials.self)")
+            }
+            if client.accountURL == nil {
+                let info = try await get()
+                client.accountURL = info.url
+            }
+            let ep = DeactivateAccountEndpoint(accountURL: client.accountURL!)
+            try await self.client.run(ep, privateKey: login.key)
         }
     }
         

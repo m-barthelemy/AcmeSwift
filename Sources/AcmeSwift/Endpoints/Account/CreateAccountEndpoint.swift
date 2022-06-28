@@ -6,12 +6,11 @@ struct CreateAccountEndpoint: EndpointProtocol {
     
     typealias Response = AcmeAccountInfo
     typealias Body = AcmeAccountSpec
+    let url: URL
     var method: HTTPMethod = .POST
         
     init(directory: AcmeDirectory,spec: AcmeAccountSpec) {
         self.body = spec
         self.url = directory.newAccount
     }
-    
-    let url: URL
 }
