@@ -64,7 +64,7 @@ struct AcmeRequestBody<T: EndpointProtocol>: Encodable {
         
         let pubKey = try JWTKit.ECDSAKey.public(pem: privateKey.publicKey.pemRepresentation)
         guard let parameters = pubKey.parameters else {
-            throw AcmeUnspecifiedError.invalidKeyError("Public key parameters are nil")
+            throw AcmeError.invalidKeyError("Public key parameters are nil")
         }
         
         self.protected = .init(
@@ -85,13 +85,13 @@ struct AcmeRequestBody<T: EndpointProtocol>: Encodable {
         
         let protectedData = try jsonEncoder.encode(self.protected)
         guard let protectedJson = String(data: protectedData, encoding: .utf8) else {
-            throw AcmeUnspecifiedError.jwsEncodeError("Unable to encode AcmeRequestBody.protected as JSON string")
+            throw AcmeError.jwsEncodeError("Unable to encode AcmeRequestBody.protected as JSON string")
         }
         let protectedBase64 = protectedJson.toBase64Url()
         
         let payloadData = try jsonEncoder.encode(self.payload)
         guard let payloadJson = String(data: payloadData, encoding: .utf8) else {
-            throw AcmeUnspecifiedError.jwsEncodeError("Unable to encode AcmeRequestBody.payload as JSON string")
+            throw AcmeError.jwsEncodeError("Unable to encode AcmeRequestBody.payload as JSON string")
         }
         let payloadBase64 = payloadJson.toBase64Url()
         
@@ -101,7 +101,7 @@ struct AcmeRequestBody<T: EndpointProtocol>: Encodable {
         
         let signedString = "\(protectedBase64).\(payloadBase64)"
         guard let signedData = signedString.data(using: .utf8) else {
-            throw AcmeUnspecifiedError.jwsEncodeError("Unable to encode data to sign String as Data")
+            throw AcmeError.jwsEncodeError("Unable to encode data to sign String as Data")
         }
         
         let signature = try self.privateKey.signature(for: signedData)

@@ -35,7 +35,7 @@ final class AcmeSwiftTests: XCTestCase {
             iO6kepubzBqqgk/iub3w+ZBDfKi6RgGYX2yVRlHMS4ZhhSoFFLoP57eI
             -----END PRIVATE KEY-----
             """
-            let login = try AccountLogin(contacts: ["bonsouere3456@gmail.com"], pemKey: privateKeyPem)
+            let login = try AccountCredentials(contacts: ["bonsouere3456@gmail.com"], pemKey: privateKeyPem)
             let existingclient = try await AcmeSwift(login: login, client: http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
             let account = try await existingclient.account.get()
             print("\n•••• Response = \(account)")

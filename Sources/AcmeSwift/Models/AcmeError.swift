@@ -1,5 +1,17 @@
 import Foundation
 
+public enum AcmeError: Error {
+    case mustBeAuthenticated(String)
+    case noNonceReturned
+    
+    case jwsEncodeError(String)
+    
+    case invalidKeyError(String)
+    
+    case dataCorrupted(String)
+    case errorCode(UInt, String?)
+}
+
 public struct AcmeResponseError: Codable, Error {
     public let type: AcmeErrorType
     

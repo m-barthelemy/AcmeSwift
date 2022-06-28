@@ -25,7 +25,7 @@ extension HTTPClientResponse {
         }*/
         
         guard let data = body.readData(length: body.readableBytes) else {
-            throw AcmeUnspecifiedError.dataCorrupted("Unable to read Data from response body buffer")
+            throw AcmeError.dataCorrupted("Unable to read Data from response body buffer")
         }
         return try decoder.decode(type, from: Data(data))
     }
@@ -38,24 +38,12 @@ extension HTTPClientResponse {
                 if let error = try? JSONDecoder().decode(AcmeResponseError.self, from: data) {
                     throw error
                 }
-                throw AcmeUnspecifiedError.errorCode(self.status.code, String(data: data, encoding: .utf8))
+                throw AcmeError.errorCode(self.status.code, String(data: data, encoding: .utf8))
             }
-            throw AcmeUnspecifiedError.errorCode(self.status.code, self.status.reasonPhrase)
+            throw AcmeError.errorCode(self.status.code, self.status.reasonPhrase)
         }
     }
     
-}
-
-public enum AcmeUnspecifiedError: Error {
-    case mustBeAuthenticated(String)
-    case noNonceReturned
-    
-    case jwsEncodeError(String)
-    
-    case invalidKeyError(String)
-    
-    case dataCorrupted(String)
-    case errorCode(UInt, String?)
 }
 
 public protocol Decoder {

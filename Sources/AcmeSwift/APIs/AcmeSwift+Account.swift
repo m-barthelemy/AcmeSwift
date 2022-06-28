@@ -18,7 +18,7 @@ extension AcmeSwift {
         /// - Returns: Returns  the `Account`.
         public func get() async throws -> AcmeAccountInfo {
             guard let login = self.client.login else {
-                throw AcmeUnspecifiedError.mustBeAuthenticated("\(AcmeSwift.self) must be called with a \(AccountLogin.self)")
+                throw AcmeError.mustBeAuthenticated("\(AcmeSwift.self) must be called with a \(AccountCredentials.self)")
             }
             let ep = CreateAccountEndpoint(
                 directory: self.client.directory,
@@ -30,8 +30,9 @@ extension AcmeSwift {
                 )
             )
             
-            var info = try await self.client.run(ep, privateKey: login.key)
+            var (info, headers) = try await self.client.run(ep, privateKey: login.key)
             info.privateKeyPem = login.key.pemRepresentation
+            info.id = URL(string: headers["Location"].first ?? "")
             return info
         }
         
@@ -49,9 +50,9 @@ extension AcmeSwift {
               }
               contactsWithURL.append(contact)
             }
+            
             // Create private key
             let privateKey = Crypto.P256.Signing.PrivateKey.init(compactRepresentable: true)
-            //print("\n •••••• Private key: \(privateKey.pemRepresentation)")
             
             let ep = CreateAccountEndpoint(
                 directory: self.client.directory,
@@ -63,11 +64,23 @@ extension AcmeSwift {
                 )
             )
             
-            var info = try await self.client.run(ep, privateKey: privateKey)
+            var (info, headers) = try await self.client.run(ep, privateKey: privateKey)
             info.privateKeyPem = privateKey.pemRepresentation
+            info.id = URL(string: headers["Location"].first ?? "")
             return info
         }
         
+        
+        public func update() async throws {
+            
+        }
+        
+        /// Deactivate an ACME Account/.
+        /// Certificates issued by the account prior to deactivation will normally not be revoked.
+        /// WARNING: ACME does not provide a way to reactivate a deactivated account.
+        public func deactivate() async throws {
+            
+        }
     }
         
 }

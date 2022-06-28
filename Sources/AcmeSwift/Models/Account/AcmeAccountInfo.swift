@@ -2,6 +2,10 @@ import Foundation
 
 /// Account information returned when calling `get()` or `create()`
 public struct AcmeAccountInfo: Codable {
+    
+    /// ID of the Account
+    internal(set) public var id: URL?
+    
     /// Information about the Account private key in JWK format
     public let key: JWK
     

@@ -17,13 +17,13 @@ public class AcmeSwift {
         ("Content-Type", "application/jose+json")
     ])
     
-    internal let login: AccountLogin?
+    internal let login: AccountCredentials?
     internal let server: URL
     internal let client: HTTPClient
     private let logger: Logger
     private let decoder: JSONDecoder
     
-    public init(login: AccountLogin? = nil, client: HTTPClient = .init(eventLoopGroupProvider: .createNew), acmeEndpoint: URL = AcmeServer.letsEncrypt, logger: Logger = Logger.init(label: "AcmeSwift")) async throws {
+    public init(login: AccountCredentials? = nil, client: HTTPClient = .init(eventLoopGroupProvider: .createNew), acmeEndpoint: URL = AcmeServer.letsEncrypt, logger: Logger = Logger.init(label: "AcmeSwift")) async throws {
         self.login = login
         self.client = client
         self.server = acmeEndpoint
@@ -54,7 +54,7 @@ public class AcmeSwift {
         nonce.method = .HEAD
         let response = try await self.client.execute(nonce, deadline: .now() + TimeAmount.seconds(15))
         guard let nonce =  response.headers["Replay-Nonce"].first else {
-            throw AcmeUnspecifiedError.noNonceReturned
+            throw AcmeError.noNonceReturned
         }
         return nonce
     }
@@ -64,7 +64,7 @@ public class AcmeSwift {
     /// - Throws: It can throw an error when encoding the body of the `Endpoint` request to JSON.
     /// - Returns: Returns the expected result defined by the `Endpoint`.
     @discardableResult
-    internal func run<T: EndpointProtocol>(_ endpoint: T, privateKey: Crypto.P256.Signing.PrivateKey) async throws -> T.Response {
+    internal func run<T: EndpointProtocol>(_ endpoint: T, privateKey: Crypto.P256.Signing.PrivateKey) async throws -> (result: T.Response, headers: HTTPHeaders) {
         logger.debug("\(Self.self) execute Endpoint: \(endpoint.method) \(endpoint.url)")
         
         var finalHeaders: HTTPHeaders = .init()
@@ -84,7 +84,7 @@ public class AcmeSwift {
         let body = try JSONEncoder().encode(wrappedBody)
         
         let bodyDebug = String(data: body, encoding: .utf8)!
-        print("\n••• Request final body: \(bodyDebug)")
+        logger.debug("\(Self.self) Endpoint: \(endpoint.method) \(endpoint.url) request body: \(bodyDebug)")
         
         request.body = .bytes(ByteBuffer(data: body))
         
@@ -95,7 +95,7 @@ public class AcmeSwift {
         //let data = respBody.getData(at: 0, length: respBody.readableBytes)
         print("\n••••RESPONSE: \(String(data: data ?? Data(), encoding: .utf8)!)")*/
         
-        return try await response.decode(as: T.Response.self, decoder: self.decoder)
+        return (result: try await response.decode(as: T.Response.self, decoder: self.decoder), headers: response.headers)
     }
 }
 

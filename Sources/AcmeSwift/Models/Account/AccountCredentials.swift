@@ -1,7 +1,7 @@
 import Foundation
 import Crypto
 
-public struct AccountLogin {
+public struct AccountCredentials {
     private (set) public var contacts: [String] = []
     private (set) public var key: Crypto.P256.Signing.PrivateKey
     
@@ -19,5 +19,4 @@ public struct AccountLogin {
             self.contacts.append(contact)
         }
     }
-    
 }
