@@ -18,7 +18,7 @@ final class AcmeSwiftTests: XCTestCase {
             let nonce = try await client.getNonce()
             print("\n••• Nonce: \(nonce)")
             
-            try await client.account.get(contacts: ["bonsouere@gmail.com"])
+            try await client.account.create(contacts: ["bonsouere@gmail.com"], acceptTOS: true)
             
             var bogus = HTTPClientRequest(url: "https://acme-staging-v02.api.letsencrypt.org/acme/new-nonce")
             bogus.method = .POST

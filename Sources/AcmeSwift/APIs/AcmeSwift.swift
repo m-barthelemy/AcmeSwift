@@ -15,7 +15,8 @@ public class AcmeSwift {
     private let headers = HTTPHeaders([
         ("Host", "localhost"),
         ("Accept", "application/json;charset=utf-8"),
-        ("Content-Type", "application/jose+json")
+        ("Content-Type", "application/jose+json"),
+        ("User-Agent", "AcmeSwift (https://github.com/m-barthelemy/AcmeSwift)")
     ])
     
     internal let server: URL

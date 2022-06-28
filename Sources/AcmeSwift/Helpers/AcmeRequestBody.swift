@@ -92,7 +92,11 @@ struct AcmeRequestBody<T: EndpointProtocol>: Encodable {
         
         self.protected = .init(
             alg: .es256,
-            jwk: .init(x: parameters.x, y: parameters.y),
+            jwk: .init(
+                // "Parse error reading JWS: EC public key has incorrect padding"
+                x: parameters.x.toBase64Url(), //.padding(toLength: 32, withPad: "=", startingAt: 0),
+                y: parameters.y.toBase64Url() //.padding(toLength: 32, withPad: "=", startingAt: 0)
+            ),
             nonce: nonce,
             url: payload.url
         )
@@ -124,11 +128,9 @@ struct AcmeRequestBody<T: EndpointProtocol>: Encodable {
             throw AcmeUnspecifiedError.jwsEncodeError("Unable to encode data to sign String as Data")
         }
         print("\n••••• signedString=\(signedString), signedData=\(signedData)")
-        
-        
         print("\n •••••• Private key: \(privateKey.pemRepresentation)")
         
-        let signature = try privateKey.signature(for: signedData)
+        let signature = try self.privateKey.signature(for: signedData)
         let signatureData = signature.rawRepresentation
         
         //print("\n••••• signature raw s
@@ -138,7 +140,6 @@ struct AcmeRequestBody<T: EndpointProtocol>: Encodable {
             throw AcmeUnspecifiedError.jwsEncodeError("Unable to get signed data string as String")
         }*/
         let signatureBase64 = signatureData.toBase64UrlString()
-        
         try container.encode(signatureBase64, forKey: .signature)
         
     }
