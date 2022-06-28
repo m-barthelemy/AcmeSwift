@@ -41,7 +41,7 @@ let account = acme.account.use(.......)
 
 Deactivate an existing account:
 
-⚠️ Only use this if you are absolutely certain that the account needs to be permanently deactivated. there is no going back.
+⚠️ Only use this if you are absolutely certain that the account needs to be permanently deactivated. There is no going back!
 
 ```swift
 
