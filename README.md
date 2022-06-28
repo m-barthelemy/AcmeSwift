@@ -54,6 +54,6 @@ try await acme.account.deactivate()
  
  ```swift
  
- let order = try await acme.order.create(domains: ["mydomain.com", "www.mydomain.com"])
+ let order = try await acme.orders.create(domains: ["mydomain.com", "www.mydomain.com"])
  ```
  
