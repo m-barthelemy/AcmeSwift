@@ -59,7 +59,7 @@ struct AcmeRequestBody<T: EndpointProtocol>: Encodable {
         
     }
     
-    init(credentials: AcmeAccountInfo? = nil, privateKey: Crypto.P256.Signing.PrivateKey, nonce: String, payload: T) throws {
+    init(accountURL: URL? = nil, privateKey: Crypto.P256.Signing.PrivateKey, nonce: String, payload: T) throws {
         self.privateKey = privateKey
         
         let pubKey = try JWTKit.ECDSAKey.public(pem: privateKey.publicKey.pemRepresentation)
@@ -69,11 +69,11 @@ struct AcmeRequestBody<T: EndpointProtocol>: Encodable {
         
         self.protected = .init(
             alg: .es256,
-            jwk: credentials == nil ?  .init(
+            jwk: accountURL == nil ?  .init(
                 x: parameters.x,
                 y: parameters.y
             ) : nil,
-            kid: credentials?.url,
+            kid: accountURL,
             nonce: nonce,
             url: payload.url
         )

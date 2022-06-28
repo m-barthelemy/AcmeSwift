@@ -71,11 +71,11 @@ extension AcmeSwift {
         }
         
         
-        public func update() async throws {
+        /*public func update() async throws {
             guard let login = self.client.login else {
                 throw AcmeError.mustBeAuthenticated("\(AcmeSwift.self).init() must be called with an \(AccountCredentials.self)")
             }
-        }
+        }*/
         
         /// Deactivate an ACME Account/.
         /// Certificates issued by the account prior to deactivation will normally not be revoked.
@@ -89,7 +89,7 @@ extension AcmeSwift {
                 client.accountURL = info.url
             }
             let ep = DeactivateAccountEndpoint(accountURL: client.accountURL!)
-            try await self.client.run(ep, privateKey: login.key)
+            try await self.client.run(ep, privateKey: login.key, accountURL: client.accountURL!)
         }
     }
         

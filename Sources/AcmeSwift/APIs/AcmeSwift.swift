@@ -66,7 +66,7 @@ public class AcmeSwift {
     /// - Throws: It can throw an error when encoding the body of the `Endpoint` request to JSON.
     /// - Returns: Returns the expected result defined by the `Endpoint`.
     @discardableResult
-    internal func run<T: EndpointProtocol>(_ endpoint: T, privateKey: Crypto.P256.Signing.PrivateKey) async throws -> (result: T.Response, headers: HTTPHeaders) {
+    internal func run<T: EndpointProtocol>(_ endpoint: T, privateKey: Crypto.P256.Signing.PrivateKey, accountURL: URL? = nil) async throws -> (result: T.Response, headers: HTTPHeaders) {
         logger.debug("\(Self.self) execute Endpoint: \(endpoint.method) \(endpoint.url)")
         
         var finalHeaders: HTTPHeaders = .init()
@@ -82,7 +82,7 @@ public class AcmeSwift {
         
         let nonce = try await self.getNonce()
         
-        let wrappedBody = try AcmeRequestBody(privateKey: privateKey, nonce: nonce, payload: endpoint)
+        let wrappedBody = try AcmeRequestBody(accountURL: accountURL, privateKey: privateKey, nonce: nonce, payload: endpoint)
         let body = try JSONEncoder().encode(wrappedBody)
         
         let bodyDebug = String(data: body, encoding: .utf8)!
