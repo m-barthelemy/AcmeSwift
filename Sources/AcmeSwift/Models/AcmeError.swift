@@ -1,7 +1,13 @@
 import Foundation
 
 public enum AcmeError: Error {
+    /// You need to call `account.use()` before performing this operation
     case mustBeAuthenticated(String)
+    
+    /// Deactivating the account failed, account still active
+    case deactivateFailed
+    
+    /// No nonce (anti-replay) value was returned by the endpoint
     case noNonceReturned
     
     case jwsEncodeError(String)

@@ -1,15 +1,20 @@
 import Foundation
 
 
-public struct OrderSpec: Codable {
+public struct AcmeOrderSpec: Codable {
+    public init(identifiers: [AcmeOrderSpec.Identifier], notBefore: Date? = nil, notAfter: Date? = nil) {
+        self.identifiers = identifiers
+        self.notBefore = notBefore
+        self.notAfter = notAfter
+    }
     
     public var identifiers: [Identifier]
     
     /// The requested value of the notBefore field in the certificate
-    public var notBefore: Date
+    public var notBefore: Date? = nil
     
     /// The requested value of the notAfter field in the certificate
-    public var notAfter: Date
+    public var notAfter: Date? = nil
     
     public struct Identifier: Codable {
         

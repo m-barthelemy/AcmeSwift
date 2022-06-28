@@ -5,33 +5,32 @@ import Logging
 
 @testable import AcmeSwift
 
-final class AcmeSwiftTests: XCTestCase {
+final class AccountTests: XCTestCase {
     var logger: Logger!
+    var http: HTTPClient!
     
     override func setUp() async throws {
         self.logger = Logger.init(label: "acme-swift-tests")
         self.logger.logLevel = .trace
-    }
-    
-    func testCreateAndDeactivateAccount() async throws {
-        var config = HTTPClient.Configuration.init()
-        //config.httpVersion =  .http1Only
-        let http = HTTPClient(
+        
+        var config = HTTPClient.Configuration(certificateVerification: .fullVerification, backgroundActivityLogger: self.logger)
+        self.http = HTTPClient(
             eventLoopGroupProvider: .createNew,
             configuration: config
         )
-        
+    }
+    
+    func testCreateAndDeactivateAccount() async throws {
+        let client = try await AcmeSwift(client: self.http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
+        defer{try? client.syncShutdown()}
         do {
-            let client = try await AcmeSwift(client: http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
-            defer{try? client.syncShutdown()}
-            
             let newAccount = try await client.account.create(contacts: ["bonsouere3456@gmail.com", "bonsouere+299@gmail.com"], acceptTOS: true)
-            print("\n•••• Response = \(newAccount)")
+            //print("\n•••• Response = \(newAccount)")
             
-            let newAccountCli = try await AcmeSwift(login: .init(contacts: newAccount.contact, pemKey: newAccount.privateKeyPem!), client: http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
+            let newAccountCli = try await AcmeSwift(login: .init(contacts: newAccount.contact, pemKey: newAccount.privateKeyPem!), client: self.http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
             defer{try? newAccountCli.syncShutdown()}
-            try await newAccountCli.account.deactivate()
             
+            try await newAccountCli.account.deactivate()
         }
         catch(let error) {
             print("\n•••• BOOM! \(error)")
@@ -51,16 +50,16 @@ final class AcmeSwiftTests: XCTestCase {
         let contacts = ["mailto:bonsouere3456@gmail.com"]
         
         let login = try AccountCredentials(contacts: contacts, pemKey: privateKeyPem)
-        let acme = try await AcmeSwift(login: login, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
+        let acme = try await AcmeSwift(login: login, client: self.http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
         defer{try? acme.syncShutdown()}
         let account = try await acme.account.get()
         XCTAssert(account.privateKeyPem != "", "Ensure private key is set")
         XCTAssert(account.contact == contacts, "Ensure Account contacts are set")
-        print("\n•••• Response = \(account)")
+        //print("\n•••• Response = \(account)")
     }
     
     func testGetNonce() async throws {
-        let client = try await AcmeSwift(acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
+        let client = try await AcmeSwift(client: self.http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
         defer{try? client.syncShutdown()}
         let nonce = try await client.getNonce()
         XCTAssert(nonce != "", "ensure Nonce is set")

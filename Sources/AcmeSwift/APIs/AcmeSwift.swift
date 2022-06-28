@@ -31,12 +31,13 @@ public class AcmeSwift {
         self.server = acmeEndpoint
         self.logger = logger
         
-        let format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSSS'Z'"
-        let formatter = DateFormatter()
-        formatter.dateFormat = format
+        //let format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSSS'Z'"
+        //let formatter = DateFormatter()
+        //formatter.dateFormat = format
         
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .formatted(formatter)
+        //decoder.dateDecodingStrategy = .formatted(formatter)
+        decoder.dateDecodingStrategy = .iso8601
         self.decoder = decoder
         
         var request = HTTPClientRequest(url: acmeEndpoint.absoluteString)

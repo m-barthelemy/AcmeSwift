@@ -89,7 +89,10 @@ extension AcmeSwift {
                 client.accountURL = info.url
             }
             let ep = DeactivateAccountEndpoint(accountURL: client.accountURL!)
-            try await self.client.run(ep, privateKey: login.key, accountURL: client.accountURL!)
+            let (info, headers) = try await self.client.run(ep, privateKey: login.key, accountURL: client.accountURL!)
+            guard info.status == .deactivated else {
+                throw AcmeError.deactivateFailed
+            }
         }
     }
         

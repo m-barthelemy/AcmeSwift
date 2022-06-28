@@ -83,6 +83,7 @@ struct AcmeRequestBody<T: EndpointProtocol>: Encodable {
     /// Encode as a JWT as  described in ACMEv2 (RFC 8555)
     func encode(to encoder: Encoder) throws {
         let jsonEncoder = JSONEncoder()
+        jsonEncoder.dateEncodingStrategy = .iso8601
         
         let protectedData = try jsonEncoder.encode(self.protected)
         guard let protectedJson = String(data: protectedData, encoding: .utf8) else {
