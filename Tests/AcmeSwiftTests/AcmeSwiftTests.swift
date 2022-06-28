@@ -1,19 +1,24 @@
 import XCTest
 import AsyncHTTPClient
 import NIO
+import Logging
 
 @testable import AcmeSwift
 
 final class AcmeSwiftTests: XCTestCase {
     func testExample() async throws {
+        var logger = Logger.init(label: "acme-swift-tests")
+        logger.logLevel = .debug
         
-        let client = try await AcmeSwift(acmeEndpoint: AcmeServer.letsEncryptStaging)
+        let client = try await AcmeSwift(acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
         defer{try! client.syncShutdown()}
         print("\n directory=\(client.directory)")
         
         do {
             let nonce = try await client.getNonce()
             print("\n••• Nonce: \(nonce)")
+            
+            try await client.account.get(contacts: ["bonsouere@gmail.com"])
             
             var bogus = HTTPClientRequest(url: "https://acme-staging-v02.api.letsencrypt.org/acme/new-nonce")
             bogus.method = .POST

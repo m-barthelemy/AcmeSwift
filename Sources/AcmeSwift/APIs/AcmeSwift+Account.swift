@@ -17,6 +17,7 @@ extension AcmeSwift {
         /// - Returns: Returns  the `Account`.
         public func get(contacts: [String]) async throws {
             let ep = CreateAccountEndpoint(
+                directory: self.client.directory,
                 spec: .init(
                     contact: contacts,
                     termsOfServiceAgreed: true,
@@ -24,6 +25,7 @@ extension AcmeSwift {
                     externalAccountBinding: nil
                 )
             )
+            try await self.client.run(ep)
         }
         
         /// Creates a new account on the ACMEv2 provider.
@@ -34,6 +36,7 @@ extension AcmeSwift {
         /// - Returns: Returns  an `Account` that can be saves for future connections.
         public func create(contacts: [String], acceptTOS: Bool) async throws {
             let ep = CreateAccountEndpoint(
+                directory: self.client.directory,
                 spec: .init(
                     contact: contacts,
                     termsOfServiceAgreed: acceptTOS,
@@ -41,6 +44,7 @@ extension AcmeSwift {
                     externalAccountBinding: nil
                 )
             )
+            try await self.client.run(ep)
         }
         
     }

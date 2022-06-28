@@ -4,6 +4,8 @@ import NIOHTTP1
 import NIOSSL
 import AsyncHTTPClient
 import Logging
+import JWTKit
+import Crypto
 
 /// The entry point for Acmev2 client commands.
 public class AcmeSwift {
@@ -39,6 +41,7 @@ public class AcmeSwift {
         try client.syncShutdown()
     }
     
+    /// Gets a Nonce (anti-replay) to include in an upcoming POST request
     internal func getNonce() async throws -> String {
         var nonce = HTTPClientRequest(url: self.directory.newNonce.absoluteString)
         nonce.method = .HEAD
@@ -52,25 +55,38 @@ public class AcmeSwift {
     /// Executes a request to a specific endpoint. The `Endpoint` struct provides all necessary data and parameters for the request.
     /// - Parameter endpoint: `Endpoint` instance with all necessary data and parameters.
     /// - Throws: It can throw an error when encoding the body of the `Endpoint` request to JSON.
-    /// - Returns: Returns the expected result definied by the `Endpoint`.
+    /// - Returns: Returns the expected result defined by the `Endpoint`.
     @discardableResult
-    internal func run<T: Endpoint>(_ endpoint: T) async throws -> T.Response {
-        logger.debug("\(Self.self) execute Endpoint: \(endpoint.method) \(endpoint.path)")
+    internal func run<T: EndpointProtocol>(_ endpoint: T) async throws -> T.Response {
+        logger.debug("\(Self.self) execute Endpoint: \(endpoint.method) \(endpoint.url)")
+        
         var finalHeaders: HTTPHeaders = self.headers
         if let additionalHeaders = endpoint.headers {
             finalHeaders.add(contentsOf: additionalHeaders)
         }
-        return try await client.execute(
-            endpoint.method,
-            daemonURL: self.deamonURL,
-            urlPath: "/\(apiVersion)/\(endpoint.path)",
-            body: endpoint.body.map {HTTPClient.Body.data( try! $0.encode())},
-            logger: logger,
-            headers: finalHeaders
-        )
-        .logResponseBody(logger)
-        .decode(as: T.Response.self, decoder: self.decoder)
-        .get()
+        
+        var request = HTTPClientRequest(url: endpoint.url.absoluteString)
+        request.method = endpoint.method
+        request.headers = finalHeaders
+        
+        //let signers = JWTSigners()
+        //signers.use(.rs256(key: .private(pem: "")), kid: .init(string: ""), isDefault: true)
+        
+        let nonce = try await self.getNonce()
+        
+        // Create private key
+        let privateKey = Crypto.P256.Signing.PrivateKey.init(compactRepresentable: true)
+        
+        let wrappedBody = try AcmeRequestBody(privateKey: privateKey, nonce: nonce, payload: endpoint)
+        let body = try JSONEncoder().encode(wrappedBody)
+        
+        let bodyDebug = String(data: body, encoding: .utf8)!
+        print("\n••• Request final body: \(bodyDebug)")
+        
+        request.body = .bytes(ByteBuffer(data: body))
+        
+        return try await client.execute(request, deadline: .now() + TimeAmount.seconds(15), logger: self.logger)
+            .decode(as: T.Response.self, decoder: self.decoder)
     }
 }
 
