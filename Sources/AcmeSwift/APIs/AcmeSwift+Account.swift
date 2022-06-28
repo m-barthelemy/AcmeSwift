@@ -16,7 +16,7 @@ extension AcmeSwift {
         ///   - contacts: Email addresses of the contact points for this account.
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  the `Account`.
-        public func get() async throws {
+        public func get() async throws -> AcmeAccountInfo {
             guard let login = self.client.login else {
                 throw AcmeUnspecifiedError.mustBeAuthenticated("\(AcmeSwift.self) must be called with a \(AccountLogin.self)")
             }
@@ -30,7 +30,9 @@ extension AcmeSwift {
                 )
             )
             
-            try await self.client.run(ep, privateKey: login.key)
+            var info = try await self.client.run(ep, privateKey: login.key)
+            info.privateKeyPem = login.key.pemRepresentation
+            return info
         }
         
         /// Creates a new account on the ACMEv2 provider.
