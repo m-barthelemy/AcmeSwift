@@ -1,4 +1,5 @@
 import Foundation
+import Crypto
 
 extension AcmeSwift {
     
@@ -15,17 +16,21 @@ extension AcmeSwift {
         ///   - contacts: Email addresses of the contact points for this account.
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  the `Account`.
-        public func get(contacts: [String]) async throws {
+        public func get() async throws {
+            guard let login = self.client.login else {
+                throw AcmeUnspecifiedError.mustBeAuthenticated("\(AcmeSwift.self) must be called with a \(AccountLogin.self)")
+            }
             let ep = CreateAccountEndpoint(
                 directory: self.client.directory,
                 spec: .init(
-                    contact: contacts,
+                    contact: login.contacts,
                     termsOfServiceAgreed: true,
                     onlyReturnExisting: true,
                     externalAccountBinding: nil
                 )
             )
-            try await self.client.run(ep)
+            
+            try await self.client.run(ep, privateKey: login.key)
         }
         
         /// Creates a new account on the ACMEv2 provider.
@@ -34,7 +39,7 @@ extension AcmeSwift {
         ///   - acceptTOS: Automatically accept the ACMEv2 provider Terms Of Service.
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  an `Account` that can be saves for future connections.
-        public func create(contacts: [String], acceptTOS: Bool) async throws {
+        public func create(contacts: [String], acceptTOS: Bool) async throws -> AcmeAccountInfo {
             var contactsWithURL: [String] = []
             for var contact in contacts {
               if contact.firstIndex(of: ":") == nil {
@@ -42,6 +47,10 @@ extension AcmeSwift {
               }
               contactsWithURL.append(contact)
             }
+            // Create private key
+            let privateKey = Crypto.P256.Signing.PrivateKey.init(compactRepresentable: true)
+            //print("\n •••••• Private key: \(privateKey.pemRepresentation)")
+            
             let ep = CreateAccountEndpoint(
                 directory: self.client.directory,
                 spec: .init(
@@ -51,7 +60,10 @@ extension AcmeSwift {
                     externalAccountBinding: nil
                 )
             )
-            try await self.client.run(ep)
+            
+            var info = try await self.client.run(ep, privateKey: privateKey)
+            info.privateKeyPem = privateKey.pemRepresentation
+            return info
         }
         
     }

@@ -6,7 +6,6 @@ import Foundation
 protocol EndpointProtocol {
     associatedtype Response: Codable
     associatedtype Body: Codable
-    var path: String { get }
     var url: URL{ get }
     var method: HTTPMethod { get }
     var headers: HTTPHeaders? {get}

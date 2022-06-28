@@ -4,7 +4,7 @@ import NIOHTTP1
 struct CreateAccountEndpoint: EndpointProtocol {
     var body: Body?
     
-    typealias Response = AcmeAccount
+    typealias Response = AcmeAccountInfo
     typealias Body = AcmeAccountSpec
     var method: HTTPMethod = .POST
         
@@ -14,8 +14,4 @@ struct CreateAccountEndpoint: EndpointProtocol {
     }
     
     let url: URL
-    
-    var path: String {
-        "acme/new-account"
-    }
 }

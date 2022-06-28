@@ -24,8 +24,21 @@ final class AcmeSwiftTests: XCTestCase {
             let nonce = try await client.getNonce()
             print("\n••• Nonce: \(nonce)")
             
-            let boobz = try await client.account.create(contacts: ["bonsouere3456@gmail.com"], acceptTOS: true)
-            print("\n•••• Response = \(boobz)")
+            let newAccount = try await client.account.create(contacts: ["bonsouere3456@gmail.com"], acceptTOS: true)
+            print("\n•••• Response = \(newAccount)")
+            
+            
+            let privateKeyPem = """
+            -----BEGIN PRIVATE KEY-----
+            MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQglxrdsu3lP83xzUej
+            ytJ7zvy2uuW3Qt7SWGRiGx8dJJuhRANCAARcpivMPbQWA/T2h8YNQPgOF+8jhyaY
+            iO6kepubzBqqgk/iub3w+ZBDfKi6RgGYX2yVRlHMS4ZhhSoFFLoP57eI
+            -----END PRIVATE KEY-----
+            """
+            let login = try AccountLogin(contacts: ["bonsouere3456@gmail.com"], pemKey: privateKeyPem)
+            let existingclient = try await AcmeSwift(login: login, client: http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
+            let account = try await existingclient.account.get()
+            print("\n•••• Response = \(account)")
             
             /*var bogus = HTTPClientRequest(url: "https://acme-staging-v02.api.letsencrypt.org/acme/new-nonce")
             bogus.method = .POST

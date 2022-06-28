@@ -4,7 +4,7 @@ import NIOHTTP1
 import NIOSSL
 import AsyncHTTPClient
 import Logging
-import JWTKit
+//import JWTKit
 import Crypto
 
 /// The entry point for Acmev2 client commands.
@@ -13,23 +13,29 @@ public class AcmeSwift {
     public let directory: AcmeDirectory
     
     private let headers = HTTPHeaders([
-        //("Accept", "application/json;charset=utf-8"),
-        //("Accept-Language", "en"),
-        //("User-Agent", "AcmeSwift (https://github.com/m-barthelemy/AcmeSwift)"),
-        //("Content-Type", "application/jose+json")
+        ("User-Agent", "AcmeSwift (https://github.com/m-barthelemy/AcmeSwift)"),
+        ("Content-Type", "application/jose+json")
     ])
     
+    internal let login: AccountLogin?
     internal let server: URL
     internal let client: HTTPClient
     private let logger: Logger
     private let decoder: JSONDecoder
     
-    public init(client: HTTPClient = .init(eventLoopGroupProvider: .createNew), acmeEndpoint: URL = AcmeServer.letsEncrypt, logger: Logger = Logger.init(label: "AcmeSwift")) async throws {
+    public init(login: AccountLogin? = nil, client: HTTPClient = .init(eventLoopGroupProvider: .createNew), acmeEndpoint: URL = AcmeServer.letsEncrypt, logger: Logger = Logger.init(label: "AcmeSwift")) async throws {
+        self.login = login
         self.client = client
         self.server = acmeEndpoint
         self.logger = logger
         
-        self.decoder = JSONDecoder()
+        let format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSSS'Z'"
+        let formatter = DateFormatter()
+        formatter.dateFormat = format
+        
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .formatted(formatter)
+        self.decoder = decoder
         
         var request = HTTPClientRequest(url: acmeEndpoint.absoluteString)
         request.method = .GET
@@ -58,30 +64,21 @@ public class AcmeSwift {
     /// - Throws: It can throw an error when encoding the body of the `Endpoint` request to JSON.
     /// - Returns: Returns the expected result defined by the `Endpoint`.
     @discardableResult
-    internal func run<T: EndpointProtocol>(_ endpoint: T) async throws -> T.Response {
+    internal func run<T: EndpointProtocol>(_ endpoint: T, privateKey: Crypto.P256.Signing.PrivateKey) async throws -> T.Response {
         logger.debug("\(Self.self) execute Endpoint: \(endpoint.method) \(endpoint.url)")
         
         var finalHeaders: HTTPHeaders = .init()
         finalHeaders.add(name: "Host", value: endpoint.url.host ?? "localhost")
-        //finalHeaders.add(name: "Content-Type", value: "application/jose+json")
-        finalHeaders.add(name: "Content-Type", value: "application/jose+json")
-        //finalHeaders.add(contentsOf: self.headers)
-        //if let additionalHeaders = endpoint.headers {
-        //    finalHeaders.add(contentsOf: additionalHeaders)
-        //}
+        finalHeaders.add(contentsOf: self.headers)
+        if let additionalHeaders = endpoint.headers {
+            finalHeaders.add(contentsOf: additionalHeaders)
+        }
         
         var request = HTTPClientRequest(url: /*"https://webhook.site/13b95f20-62a9-41c9-92c7-c535e41144dd"*/ endpoint.url.absoluteString)
         request.method = endpoint.method
         request.headers = finalHeaders
-        print("\n•••• HEADERZ=\(request.headers)")
-        
-        //let signers = JWTSigners()
-        //signers.use(.rs256(key: .private(pem: "")), kid: .init(string: ""), isDefault: true)
         
         let nonce = try await self.getNonce()
-        
-        // Create private key
-        let privateKey = Crypto.P256.Signing.PrivateKey.init(compactRepresentable: true)
         
         let wrappedBody = try AcmeRequestBody(privateKey: privateKey, nonce: nonce, payload: endpoint)
         let body = try JSONEncoder().encode(wrappedBody)
@@ -93,9 +90,10 @@ public class AcmeSwift {
         
         let response = try await client.execute(request, deadline: .now() + TimeAmount.seconds(15), logger: self.logger)
         
-        var respBody = try await response.body.collect(upTo: 2*1024*1024)
+        /*var respBody = try await response.body.collect(upTo: 2*1024*1024)
         let data = respBody.readData(length: respBody.readableBytes)
-        print("\n••••RESPONSE: \(String(data: data ?? Data(), encoding: .utf8)!)")
+        //let data = respBody.getData(at: 0, length: respBody.readableBytes)
+        print("\n••••RESPONSE: \(String(data: data ?? Data(), encoding: .utf8)!)")*/
         
         return try await response.decode(as: T.Response.self, decoder: self.decoder)
     }
