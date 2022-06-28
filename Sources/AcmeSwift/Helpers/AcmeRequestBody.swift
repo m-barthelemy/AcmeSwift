@@ -1,8 +1,8 @@
 import Foundation
 import Crypto
 import JWTKit
+
 /*
- 
 Example request body:
  {
      "protected": base64url({
@@ -89,18 +89,36 @@ struct AcmeRequestBody<T: EndpointProtocol>: Encodable {
         guard let parameters = pubKey.parameters else {
             throw AcmeUnspecifiedError.invalidKeyError("Public key parameters are nil")
         }
+        print("\n••••  x=\(parameters.x.fromBase64Url()), y=\(parameters.y.fromBase64Url())")
+        
+        //let xData = Data(string: parameters.x, options: Data.Base64DecodingOptions.ignoreUnknownCharacters)
+        //let yData = Data(string: parameters.y, options: Data.Base64DecodingOptions.ignoreUnknownCharacters)
+        let xData = parameters.x.data(using: .utf8)
+        let yData = parameters.y.data(using: .utf8)
+        
+         
+        print("\n xData=\(xData), yData=\(yData)")
+        print("\n•••• decoded x=\(String(data: xData!, encoding: .utf8)), y=\(String(data: yData!, encoding: .utf8))")
+             
+        let x = parameters.x //String(data: xData!, encoding: .utf8)!
+        let y = parameters.y //String(data: yData!, encoding: .utf8)!
+        
+        
         
         self.protected = .init(
             alg: .es256,
             jwk: .init(
                 // "Parse error reading JWS: EC public key has incorrect padding"
-                x: parameters.x.toBase64Url(), //.padding(toLength: 32, withPad: "=", startingAt: 0),
-                y: parameters.y.toBase64Url() //.padding(toLength: 32, withPad: "=", startingAt: 0)
+                x: x, //.padding(toLength: 32, withPad: "=", startingAt: 0),
+                y: y //.padding(toLength: 32, withPad: "=", startingAt: 0)
             ),
             nonce: nonce,
             url: payload.url
         )
         self.payload = payload.body ?? (NoBody.init() as! T.Body)
+        
+        print("\n •••• parameters.x length=\(parameters.x.count) value=\(x)")
+        print("\n •••• parameters.y length=\(parameters.y.count) value=\(y)")
     }
     
     /// Encode as a JWT as  described in ACMEv2 (RFC 8555)
@@ -124,7 +142,8 @@ struct AcmeRequestBody<T: EndpointProtocol>: Encodable {
         try container.encode(payloadBase64, forKey: .payload)
         
         let signedString = "\(protectedBase64).\(payloadBase64)"
-        guard let signedData = signedString.toBase64Url().data(using: .utf8) else {
+        //guard let signedData = signedString.toBase64Url().data(using: .utf8) else {
+        guard let signedData = signedString.data(using: .utf8) else {
             throw AcmeUnspecifiedError.jwsEncodeError("Unable to encode data to sign String as Data")
         }
         print("\n••••• signedString=\(signedString), signedData=\(signedData)")

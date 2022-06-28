@@ -35,10 +35,17 @@ extension AcmeSwift {
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  an `Account` that can be saves for future connections.
         public func create(contacts: [String], acceptTOS: Bool) async throws {
+            var contactsWithURL: [String] = []
+            for var contact in contacts {
+              if contact.firstIndex(of: ":") == nil {
+                contact = "mailto:" + contact
+              }
+              contactsWithURL.append(contact)
+            }
             let ep = CreateAccountEndpoint(
                 directory: self.client.directory,
                 spec: .init(
-                    contact: contacts,
+                    contact: contactsWithURL,
                     termsOfServiceAgreed: acceptTOS,
                     onlyReturnExisting: false,
                     externalAccountBinding: nil

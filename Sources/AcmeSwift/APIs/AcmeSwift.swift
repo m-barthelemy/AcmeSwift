@@ -13,10 +13,10 @@ public class AcmeSwift {
     public let directory: AcmeDirectory
     
     private let headers = HTTPHeaders([
-        ("Host", "localhost"),
-        ("Accept", "application/json;charset=utf-8"),
-        ("Content-Type", "application/jose+json"),
-        ("User-Agent", "AcmeSwift (https://github.com/m-barthelemy/AcmeSwift)")
+        //("Accept", "application/json;charset=utf-8"),
+        //("Accept-Language", "en"),
+        //("User-Agent", "AcmeSwift (https://github.com/m-barthelemy/AcmeSwift)"),
+        //("Content-Type", "application/jose+json")
     ])
     
     internal let server: URL
@@ -61,14 +61,19 @@ public class AcmeSwift {
     internal func run<T: EndpointProtocol>(_ endpoint: T) async throws -> T.Response {
         logger.debug("\(Self.self) execute Endpoint: \(endpoint.method) \(endpoint.url)")
         
-        var finalHeaders: HTTPHeaders = self.headers
-        if let additionalHeaders = endpoint.headers {
-            finalHeaders.add(contentsOf: additionalHeaders)
-        }
+        var finalHeaders: HTTPHeaders = .init()
+        finalHeaders.add(name: "Host", value: endpoint.url.host ?? "localhost")
+        //finalHeaders.add(name: "Content-Type", value: "application/jose+json")
+        finalHeaders.add(name: "Content-Type", value: "application/jose+json")
+        //finalHeaders.add(contentsOf: self.headers)
+        //if let additionalHeaders = endpoint.headers {
+        //    finalHeaders.add(contentsOf: additionalHeaders)
+        //}
         
-        var request = HTTPClientRequest(url: endpoint.url.absoluteString)
+        var request = HTTPClientRequest(url: /*"https://webhook.site/13b95f20-62a9-41c9-92c7-c535e41144dd"*/ endpoint.url.absoluteString)
         request.method = endpoint.method
         request.headers = finalHeaders
+        print("\n•••• HEADERZ=\(request.headers)")
         
         //let signers = JWTSigners()
         //signers.use(.rs256(key: .private(pem: "")), kid: .init(string: ""), isDefault: true)
@@ -86,8 +91,13 @@ public class AcmeSwift {
         
         request.body = .bytes(ByteBuffer(data: body))
         
-        return try await client.execute(request, deadline: .now() + TimeAmount.seconds(15), logger: self.logger)
-            .decode(as: T.Response.self, decoder: self.decoder)
+        let response = try await client.execute(request, deadline: .now() + TimeAmount.seconds(15), logger: self.logger)
+        
+        var respBody = try await response.body.collect(upTo: 2*1024*1024)
+        let data = respBody.readData(length: respBody.readableBytes)
+        print("\n••••RESPONSE: \(String(data: data ?? Data(), encoding: .utf8)!)")
+        
+        return try await response.decode(as: T.Response.self, decoder: self.decoder)
     }
 }
 
@@ -100,6 +110,7 @@ public struct AcmeServer {
     /// The staging Let's Encrypt endpoint, for tests. Issues certificate not recognized by clients/browsers
     public static var letsEncryptStaging: URL {
         URL(string: "https://acme-staging-v02.api.letsencrypt.org/directory")!
+        //URL(string: "https://webhook.site/13b95f20-62a9-41c9-92c7-c535e41144dd")!
     }
     
     /// A custom URL to a service compatible with ACMEv2 protocol
