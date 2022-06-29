@@ -7,7 +7,6 @@ struct DeactivateAccountEndpoint: EndpointProtocol {
     typealias Response = AcmeAccountInfo
     typealias Body = DeactivateAccountRequest
     let url: URL
-    var method: HTTPMethod = .POST
     
     init(accountURL: URL) {
         self.body = DeactivateAccountRequest()

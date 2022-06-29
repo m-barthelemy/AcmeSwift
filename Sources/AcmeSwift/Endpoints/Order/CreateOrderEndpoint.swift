@@ -7,7 +7,6 @@ struct CreateOrderEndpoint: EndpointProtocol {
     typealias Response = AcmeOrderInfo
     typealias Body = AcmeOrderSpec
     let url: URL
-    var method: HTTPMethod = .POST
     
     init(directory: AcmeDirectory, spec: AcmeOrderSpec) {
         self.body = spec

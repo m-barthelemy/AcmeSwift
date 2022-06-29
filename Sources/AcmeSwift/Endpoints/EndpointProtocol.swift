@@ -20,4 +20,8 @@ extension EndpointProtocol {
     public var headers: HTTPHeaders? {
         return nil
     }
+    
+    public var method: HTTPMethod {
+        return .POST
+    }
 }

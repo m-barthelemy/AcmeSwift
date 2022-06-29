@@ -21,13 +21,11 @@ final class OrderTests: XCTestCase {
     }
     
     func testCreateOrder() async throws {
-        let client = try await AcmeSwift(client: self.http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
-        defer{try? client.syncShutdown()}
+        let acme = try await AcmeSwift(client: self.http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
+        defer {try? acme.syncShutdown()}
         do {
-            let newAccount = try await client.account.create(contacts: ["bonsouere3456@gmail.com", "bonsouere+299@gmail.com"], acceptTOS: true)
-            
-            let acme = try await AcmeSwift(login: .init(contacts: newAccount.contact, pemKey: newAccount.privateKeyPem!), client: self.http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
-            defer{try? acme.syncShutdown()}
+            let account = try await acme.account.create(contacts: ["bonsouere3456@gmail.com", "bonsouere+299@gmail.com"], acceptTOS: true)
+            try acme.account.use(account)
             
             let order = try await acme.orders.create(domains: ["www.mydomain.com"])
             print("\n••• Order: \(order)")

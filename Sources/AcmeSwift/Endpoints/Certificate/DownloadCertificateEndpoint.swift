@@ -7,7 +7,6 @@ struct DownloadCertificateEndpoint: EndpointProtocol {
     typealias Response = String
     typealias Body = NoBody
     let url: URL
-    var method: HTTPMethod = .POST
     
     init(certURL: URL) {
         self.body = NoBody()
