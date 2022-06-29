@@ -66,5 +66,9 @@ extension AcmeSwift {
             let (info, _) = try await self.client.run(ep, privateKey: login.key, accountURL: client.accountURL!)
             return info
         }
+        
+        public func getChallenges(order: AcmeOrderInfo) async throws {
+            
+        }
     }
 }
