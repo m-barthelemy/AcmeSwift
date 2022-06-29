@@ -18,6 +18,9 @@ public struct AcmeOrderInfo: Codable {
     /// URL to call once all the authorizations (challenges) have been completed.
     public let finalize: URL
     
+    /// URL to call to obtain the certificate  when the Order has been finalized and has a `valid` status.
+    public let certificate: URL?
+    
     public enum OrderStatus: String, Codable {
         /// The certificate will not be issued.  Consider thisorder process abandoned.
         case invalid

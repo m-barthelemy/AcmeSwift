@@ -7,6 +7,10 @@ public enum AcmeError: Error {
     /// Deactivating the account failed, account still active
     case deactivateFailed
     
+    /// The Order is not in a state that allows downloading the certificate.
+    /// It can be invalid, or some challenges have not yet been completed
+    case certificateNotReady(AcmeOrderInfo.OrderStatus, String)
+    
     /// No nonce (anti-replay) value was returned by the endpoint
     case noNonceReturned
     

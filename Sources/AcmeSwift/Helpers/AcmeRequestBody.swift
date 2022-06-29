@@ -112,10 +112,6 @@ struct AcmeRequestBody<T: EndpointProtocol>: Encodable {
         let signatureBase64 = signatureData.toBase64UrlString()
         try container.encode(signatureBase64, forKey: .signature)
     }
-    
-    struct NoBody: Codable {
-        init(){}
-    }
 }
 
 public struct JWK: Codable {
@@ -140,4 +136,9 @@ public struct JWK: Codable {
     public enum CurveType: String, Codable {
         case p256 = "P-256"
     }
+}
+
+// For requests that have an empty body
+struct NoBody: Codable {
+    init(){}
 }

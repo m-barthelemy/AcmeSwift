@@ -59,3 +59,18 @@ try await acme.account.deactivate()
  let order = try await acme.orders.create(domains: ["mydomain.com", "www.mydomain.com"])
  ```
  
+
+Finalize an order:
+```swift
+let finalizedOrder = try await acme.orders.finalize(order: order, withCsr: "...")
+```
+
+
+### Certificates
+
+Download a certificate:
+This assumes that the corresponding Order has been finalized successfully, meaning that the Order `status` field is `valid`.
+
+```swift
+let certs = try await acme.certificates.download(order: finalizedOrder)
+```
