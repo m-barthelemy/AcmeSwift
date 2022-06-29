@@ -84,6 +84,7 @@ struct AcmeRequestBody<T: EndpointProtocol>: Encodable {
     func encode(to encoder: Encoder) throws {
         let jsonEncoder = JSONEncoder()
         jsonEncoder.dateEncodingStrategy = .iso8601
+        jsonEncoder.outputFormatting = .sortedKeys
         
         var container = encoder.container(keyedBy: CodingKeys.self)
         

@@ -21,6 +21,8 @@ public struct AcmeOrderInfo: Codable {
     /// URL to call to obtain the certificate  when the Order has been finalized and has a `valid` status.
     public let certificate: URL?
     
+    
+    
     public enum OrderStatus: String, Codable {
         /// The certificate will not be issued.  Consider thisorder process abandoned.
         case invalid

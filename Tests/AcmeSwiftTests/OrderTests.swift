@@ -27,20 +27,35 @@ final class OrderTests: XCTestCase {
             let account = try await acme.account.create(contacts: ["bonsouere3456@gmail.com", "bonsouere+299@gmail.com"], acceptTOS: true)
             try acme.account.use(account)
             
-            let order = try await acme.orders.create(domains: ["www.mydomain.com"])
-            print("\n••• Order: \(order)")
+            let order = try await acme.orders.create(domains: ["mydomain.com", "*.mydomain.com"])
+            //print("\n••• Order: \(order)")
             XCTAssert(order.status == .pending, "Ensure order is pending")
             XCTAssert(order.expires > Date(), "Ensure order expiry is parsed")
-            XCTAssert(order.identifiers.first?.value == "www.mydomain.com", "Ensure order domains match request")
+            XCTAssert(order.identifiers.count == 2, "Ensure identifiers match number of requested domains")
             
             let authorizations = try await acme.orders.getAuthorizations(order: order)
-            print("\n••• Authorizations: \(authorizations)")
-            
+            let challengeDescriptions = try await acme.orders.describePendingChallenges(from: order, preferring: .http)
+            for desc in challengeDescriptions {
+                if desc.type == .http {
+                    print("\n • The URL \(desc.endpoint) needs to return \(desc.value)")
+                }
+                else if desc.type == .dns {
+                    print("\n • Create the following DNS record: \(desc.endpoint) TXT \(desc.value)")
+                }
+            }
         }
         catch(let error) {
             print("\n•••• BOOM! \(error)")
             throw error
         }
+    }
+    
+    private func toJson<T: Encodable>(_ value: T) -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        let data = try! encoder.encode(value)
+        return String(data: data, encoding: .utf8)!
+        
     }
     
 }

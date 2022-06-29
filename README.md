@@ -11,6 +11,8 @@ Although it _might_ work with other certificate providers implementing ACMEv2, t
 This library doesn't handle any ACME challenge at all by itself.
 Publishing the challenge, either by creating DNS record or exposing the value over HTTP, is your full responsibility. 
 
+Additionally, this library currently doesn't provide any way to generate a private key or a CSR.
+
 
 ## Usage
 
@@ -82,6 +84,23 @@ Finalize an order:
 let finalizedOrder = try await acme.orders.finalize(order: order, withCsr: "...")
 ```
 
+Get the order authorizations and challenges: 
+```swift
+let authorizations = try await acme.orders.getAuthorizations(order: order)
+```
+
+You need to publish the challenges. AcmeSwift provides a way to list the pending HTTP or DNS challenges:
+```swift
+let challengeDescriptions = try await acme.orders.describePendingChallenges(from: order, preferring: .http)
+for desc in challengeDescriptions {
+    if desc.type == .http {
+        print("\n • The URL \(desc.endpoint) needs to return \(desc.value)")
+    }
+    else if desc.type == .dns {
+        print("\n • Create the following DNS record: \(desc.endpoint) TXT \(desc.value)")
+    }
+}
+```
 
 ### Certificates
 
