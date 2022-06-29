@@ -29,13 +29,13 @@ let acme = try await AcmeSwift(acmeEndpoint: AcmeServer.letsEncryptStaging)
 
 ### Account
 
-Create a new Let's Encrypt account:
+- Create a new Let's Encrypt account:
 
 ```swift
 let account = acme.account.create(contacts: ["my.email@domain.com"], validateTOS: true)
 ```
 
-Reuse a previously created account:
+- Reuse a previously created account:
 
 Option 1: Directly use the object returned by `account.create(...)`
 ```swift
@@ -48,7 +48,7 @@ let credentials = try AccountCredentials(contacts: ["my.email@domain.tld"], pemK
 try acme.account.use(credentials)
 ```
 
-Deactivate an existing account:
+- Deactivate an existing account:
 
 ⚠️ Only use this if you are absolutely certain that the account needs to be permanently deactivated. There is no going back!
 
@@ -76,7 +76,8 @@ let finalizedOrder = try await acme.orders.finalize(order: order, withCsr: "..."
 ### Certificates
 
 Download a certificate:
-This assumes that the corresponding Order has been finalized successfully, meaning that the Order `status` field is `valid`.
+
+> This assumes that the corresponding Order has been finalized successfully, meaning that the Order `status` field is `valid`.
 
 ```swift
 let certs = try await acme.certificates.download(order: finalizedOrder)
