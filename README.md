@@ -4,6 +4,8 @@ This is a **work in progress** Let's Encrypt (ACME v2) client written in Swift.
 
 It fully uses the Swift concurrency features introduced with Swift 5.5 (`async`/`await`).
 
+Although it _might_ work with other certificate providers implementing ACMEv2, this has not been tested at all.
+
 
 ## Note
 This library doesn't handle any ACME challenge at all by itself.
