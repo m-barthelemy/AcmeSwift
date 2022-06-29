@@ -21,16 +21,16 @@ final class AccountTests: XCTestCase {
     }
     
     func testCreateAndDeactivateAccount() async throws {
-        let client = try await AcmeSwift(client: self.http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
-        defer{try? client.syncShutdown()}
+        let acme = try await AcmeSwift(client: self.http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
+        defer{try? acme.syncShutdown()}
         do {
-            let newAccount = try await client.account.create(contacts: ["bonsouere3456@gmail.com", "bonsouere+299@gmail.com"], acceptTOS: true)
+            let account = try await acme.account.create(contacts: ["bonsouere3456@gmail.com", "bonsouere+299@gmail.com"], acceptTOS: true)
             //print("\n•••• Response = \(newAccount)")
+            try acme.account.use(account)
             
-            let newAccountCli = try await AcmeSwift(login: .init(contacts: newAccount.contact, pemKey: newAccount.privateKeyPem!), client: self.http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
-            defer{try? newAccountCli.syncShutdown()}
+            defer{try? acme.syncShutdown()}
             
-            try await newAccountCli.account.deactivate()
+            try await acme.account.deactivate()
         }
         catch(let error) {
             print("\n•••• BOOM! \(error)")
@@ -50,8 +50,9 @@ final class AccountTests: XCTestCase {
         let contacts = ["mailto:bonsouere3456@gmail.com"]
         
         let login = try AccountCredentials(contacts: contacts, pemKey: privateKeyPem)
-        let acme = try await AcmeSwift(login: login, client: self.http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
+        let acme = try await AcmeSwift(client: self.http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
         defer{try? acme.syncShutdown()}
+        try acme.account.use(login)
         let account = try await acme.account.get()
         XCTAssert(account.privateKeyPem != "", "Ensure private key is set")
         XCTAssert(account.contact == contacts, "Ensure Account contacts are set")

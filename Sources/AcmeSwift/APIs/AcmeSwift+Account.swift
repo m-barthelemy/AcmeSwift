@@ -70,6 +70,24 @@ extension AcmeSwift {
             return info
         }
         
+        /// Use an existing Account for the ACMEv2 provider
+        public func use(_ account: AcmeAccountInfo) throws {
+            guard let privateKey = account.privateKeyPem else {
+                throw AcmeError.invalidAccountInfo
+            }
+            self.client.login = try .init(
+                contacts: account.contact,
+                pemKey: privateKey
+            )
+        }
+        
+        /// Use an existing Account for the ACMEv2 provider
+        public func use(_ credentials: AccountCredentials) throws {
+            self.client.login = .init(
+                contacts: credentials.contacts,
+                key: credentials.key
+            )
+        }
         
         /*public func update() async throws {
             guard let login = self.client.login else {

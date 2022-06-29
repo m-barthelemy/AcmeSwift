@@ -17,7 +17,7 @@ public class AcmeSwift {
         ("Content-Type", "application/jose+json")
     ])
     
-    internal let login: AccountCredentials?
+    internal var login: AccountCredentials?
     internal var accountURL: URL?
     
     internal let server: URL
@@ -25,8 +25,7 @@ public class AcmeSwift {
     private let logger: Logger
     private let decoder: JSONDecoder
     
-    public init(login: AccountCredentials? = nil, client: HTTPClient = .init(eventLoopGroupProvider: .createNew), acmeEndpoint: URL = AcmeServer.letsEncrypt, logger: Logger = Logger.init(label: "AcmeSwift")) async throws {
-        self.login = login
+    public init(client: HTTPClient = .init(eventLoopGroupProvider: .createNew), acmeEndpoint: URL = AcmeServer.letsEncrypt, logger: Logger = Logger.init(label: "AcmeSwift")) async throws {
         self.client = client
         self.server = acmeEndpoint
         self.logger = logger
