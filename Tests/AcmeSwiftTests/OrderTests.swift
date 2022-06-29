@@ -33,10 +33,14 @@ final class OrderTests: XCTestCase {
             XCTAssert(order.expires > Date(), "Ensure order expiry is parsed")
             XCTAssert(order.identifiers.first?.value == "www.mydomain.com", "Ensure order domains match request")
             
+            let authorizations = try await acme.orders.getAuthorizations(order: order)
+            print("\n••• Authorizations: \(authorizations)")
+            
         }
         catch(let error) {
             print("\n•••• BOOM! \(error)")
             throw error
         }
     }
+    
 }

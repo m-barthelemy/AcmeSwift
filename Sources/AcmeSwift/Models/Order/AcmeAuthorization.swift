@@ -1,6 +1,6 @@
 import Foundation
 
-struct AcmeAuthorization: Codable {
+public struct AcmeAuthorization: Codable {
     public let status: AuthorizationStatus
     
     /// The timestamp after which the server will consider this authorization invalid
@@ -25,7 +25,7 @@ struct AcmeAuthorization: Codable {
         public let url: URL
         public let `type`: ChallengeType
         public let status: ChallengeStatus
-        public let token: StringTest
+        public let token: String
         public let validated: Date?
 
         public enum ChallengeType: String, Codable {

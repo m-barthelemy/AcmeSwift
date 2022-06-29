@@ -80,28 +80,36 @@ struct AcmeRequestBody<T: EndpointProtocol>: Encodable {
         self.payload = payload.body ?? (NoBody.init() as! T.Body)
     }
     
-    /// Encode as a JWT as  described in ACMEv2 (RFC 8555)
+    /// Encode as a JWT as described in ACMEv2 (RFC 8555)
     func encode(to encoder: Encoder) throws {
         let jsonEncoder = JSONEncoder()
         jsonEncoder.dateEncodingStrategy = .iso8601
+        
+        var container = encoder.container(keyedBy: CodingKeys.self)
         
         let protectedData = try jsonEncoder.encode(self.protected)
         guard let protectedJson = String(data: protectedData, encoding: .utf8) else {
             throw AcmeError.jwsEncodeError("Unable to encode AcmeRequestBody.protected as JSON string")
         }
         let protectedBase64 = protectedJson.toBase64Url()
+        try container.encode(protectedBase64, forKey: .protected)
         
         let payloadData = try jsonEncoder.encode(self.payload)
         guard let payloadJson = String(data: payloadData, encoding: .utf8) else {
             throw AcmeError.jwsEncodeError("Unable to encode AcmeRequestBody.payload as JSON string")
         }
-        let payloadBase64 = payloadJson.toBase64Url()
         
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(protectedBase64, forKey: .protected)
+        let payloadBase64: String!
+        // Empty payload is required most of the time for so-called POST-AS-GET ACMEv2 requests.
+        if payloadJson == "\"\"" {
+            payloadBase64 = ""
+        }
+        else {
+            payloadBase64 = payloadJson.toBase64Url()
+        }
         try container.encode(payloadBase64, forKey: .payload)
         
-        let signedString = "\(protectedBase64).\(payloadBase64)"
+        let signedString = "\(protectedBase64).\(payloadBase64!)"
         guard let signedData = signedString.data(using: .utf8) else {
             throw AcmeError.jwsEncodeError("Unable to encode data to sign String as Data")
         }

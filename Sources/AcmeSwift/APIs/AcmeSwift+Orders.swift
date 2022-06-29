@@ -67,8 +67,23 @@ extension AcmeSwift {
             return info
         }
         
-        public func getChallenges(order: AcmeOrderInfo) async throws {
+        public func getAuthorizations(order: AcmeOrderInfo) async throws -> [AcmeAuthorization] {
+            guard let login = self.client.login else {
+                throw AcmeError.mustBeAuthenticated("\(AcmeSwift.self).init() must be called with an \(AccountCredentials.self)")
+            }
             
+            if client.accountURL == nil {
+                let info = try await self.client.account.get()
+                client.accountURL = info.url
+            }
+            
+            var authorizations: [AcmeAuthorization] = []
+            for auth in order.authorizations {
+                let ep = GetAuthorizationEndpoint(url: auth)
+                let (authorization, _) = try await self.client.run(ep, privateKey: login.key, accountURL: client.accountURL!)
+                authorizations.append(authorization)
+            }
+            return authorizations
         }
     }
 }
