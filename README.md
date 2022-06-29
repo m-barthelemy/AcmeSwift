@@ -35,6 +35,12 @@ let acme = try await AcmeSwift(acmeEndpoint: AcmeServer.letsEncryptStaging)
 let account = acme.account.create(contacts: ["my.email@domain.com"], validateTOS: true)
 ```
 
+The information returned by this method is an `AcmeAccountInfo` object that can be directly reused for authentication. 
+For example, you can encode it to JSON, save it somwewhere and then decode it in order to log into your account later.
+
+⚠️ This Account information contains a private key and as such, **must** be stored securely.
+
+
 <br/>
 
 - Reuse a previously created account:
