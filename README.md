@@ -37,8 +37,15 @@ let account = acme.account.create(contacts: ["my.email@domain.com"], validateTOS
 
 Reuse a previously created account:
 
+Option 1: Directly use the object returned by `account.create(...)`
 ```swift
-let account = acme.account.use(.......)
+try acme.account.use(account)
+```
+
+Option 2: Pass credentials "manually"
+```swift
+let credentials = try AccountCredentials(contacts: ["my.email@domain.tld"], pemKey: "private key in PEM format")
+try acme.account.use(credentials)
 ```
 
 Deactivate an existing account:
