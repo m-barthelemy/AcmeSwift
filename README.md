@@ -111,3 +111,8 @@ Download a certificate:
 ```swift
 let certs = try await acme.certificates.download(order: finalizedOrder)
 ```
+
+This return a list of PEM-encoded certificates. The first item is the actual certificate for the requested domains.
+The following items are the other certificates required to establish the full certification chain (issuing CA, root CA...).
+
+The order of the items in the list is directly compatible with the way Nginx expects them; you can concatenate all the items into a single file and pass this file to the `ssl_certificate` directive.
