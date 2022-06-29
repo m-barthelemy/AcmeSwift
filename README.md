@@ -35,6 +35,8 @@ let acme = try await AcmeSwift(acmeEndpoint: AcmeServer.letsEncryptStaging)
 let account = acme.account.create(contacts: ["my.email@domain.com"], validateTOS: true)
 ```
 
+<br/>
+
 - Reuse a previously created account:
 
 Option 1: Directly use the object returned by `account.create(...)`
@@ -47,6 +49,8 @@ Option 2: Pass credentials "manually"
 let credentials = try AccountCredentials(contacts: ["my.email@domain.tld"], pemKey: "private key in PEM format")
 try acme.account.use(credentials)
 ```
+
+<br/>
 
 - Deactivate an existing account:
 
