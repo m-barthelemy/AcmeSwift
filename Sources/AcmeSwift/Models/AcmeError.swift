@@ -87,6 +87,10 @@ public struct AcmeResponseError: Codable, Error {
         /// A contact URL for an account was invalid
         case invalidContact = "urn:ietf:params:acme:error:invalidContact"
         
+        /// A contact URL for an account was invalid.
+        /// Specific to Let's Encrypt (Boulder)
+        case invalidEmail = "urn:ietf:params:acme:error:invalidEmail"
+        
         /// A contact URL for an account used an unsupported protocol scheme
         case unsupportedContact = "urn:ietf:params:acme:error:unsupportedContact"
         
