@@ -80,12 +80,6 @@ try await acme.account.deactivate()
  let order = try await acme.orders.create(domains: ["mydomain.com", "www.mydomain.com"])
  ```
  
-
-Finalize an order:
-```swift
-let finalizedOrder = try await acme.orders.finalize(order: order, withCsr: "...")
-```
-
 Get the order authorizations and challenges: 
 ```swift
 let authorizations = try await acme.orders.getAuthorizations(from: order)
@@ -114,8 +108,17 @@ let updatedChallenges = try await acme.orders.validateChallenges(from: order, pr
 Now we have to wait a bit, or periodically query the ACMEv2/LetsEncrypt provider about the status of the challenges.
 AcmeSwift provides a convenience method that will do exactly this: periodically check the status of the order until all the challenges have been processed:
 ```swift
-let order = try await acme.orders.wait(oder: order, timeout: 30 /* in seconds*/)
+let failedAuthorizations = try await acme.orders.wait(order: order, timeout: 30 /* in seconds*/) 
+guard failedAuthorizations.count == 0 else {
+    fatalError("Some challenges were not validated! \(failedAuthorizations)")
+}
 ```
+
+Finalize an order, once all the authorizations/challenges are valid:
+```swift
+let finalizedOrder = try await acme.orders.finalize(order: order, withCsr: "...")
+```
+
 
 ### Certificates
 
@@ -124,7 +127,7 @@ Download a certificate:
 > This assumes that the corresponding Order has been finalized successfully, meaning that the Order `status` field is `valid`.
 
 ```swift
-let certs = try await acme.certificates.download(order: finalizedOrder)
+let certs = try await acme.certificates.download(for: finalizedOrder)
 ```
 
 This return a list of PEM-encoded certificates. The first item is the actual certificate for the requested domains.

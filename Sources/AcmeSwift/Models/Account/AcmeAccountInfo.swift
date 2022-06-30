@@ -25,6 +25,10 @@ public struct AcmeAccountInfo: Codable {
     /// Current status of the Account
     public let status: Status
     
+    /// URL to the pending orders for this account
+    /// No provider seems to have this fully implemented
+    public let orders: URL?
+    
     public enum Status: String, Codable {
         case valid, deactivated
     }

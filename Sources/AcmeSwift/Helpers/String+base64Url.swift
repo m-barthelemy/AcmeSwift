@@ -23,6 +23,13 @@ extension String {
         return result
     }
     
+    func base64ToBase64Url() -> String {
+        return self
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+    }
+    
     func pemToBase64Url() -> String {
         return self.replacingOccurrences(of: "-----BEGIN CERTIFICATE REQUEST-----", with: "")
             .replacingOccurrences(of: "-----BEGIN CERTIFICATE-----", with: "")

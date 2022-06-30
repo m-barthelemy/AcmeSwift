@@ -67,7 +67,7 @@ public class AcmeSwift {
     /// - Returns: Returns the expected result defined by the `Endpoint`.
     @discardableResult
     internal func run<T: EndpointProtocol>(_ endpoint: T, privateKey: Crypto.P256.Signing.PrivateKey, accountURL: URL? = nil) async throws -> (result: T.Response, headers: HTTPHeaders) {
-        logger.debug("\(Self.self) execute Endpoint: \(endpoint.method) \(endpoint.url)")
+        logger.debug("\(Self.self) execute Endpoint \(T.self): \(endpoint.method) \(endpoint.url)")
         
         var finalHeaders: HTTPHeaders = .init()
         finalHeaders.add(name: "Host", value: endpoint.url.host ?? "localhost")

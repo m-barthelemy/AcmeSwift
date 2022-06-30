@@ -22,11 +22,23 @@ public struct AcmeAuthorization: Codable {
     }
     
     public struct Challenge: Codable {
+        /// The URL to which a response can be posted
         public let url: URL
+        
+        /// The type of challenge
         public let `type`: ChallengeType
+        
+        /// The status of this challenge
         public let status: ChallengeStatus
+        
+        
         public let token: String
+        
+        /// The time at which the server validated this challenge.
         public let validated: Date?
+        
+        /// Error that occurred while the server was validating the challenge
+        public let error: AcmeResponseError?
 
         public enum ChallengeType: String, Codable {
             //// A HTTP challenge that requires publishing the contents of a challenge at a specific URL to prove ownership of the domain record.

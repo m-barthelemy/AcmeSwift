@@ -15,7 +15,7 @@ extension AcmeSwift {
         /// The certificates are returned a a list of PEM strings.
         /// The first item is the final certificate for the domain.
         /// The second item, if any, is the issuer certificate.
-        public func download(order: AcmeOrderInfo) async throws -> [String] {
+        public func download(`for` order: AcmeOrderInfo) async throws -> [String] {
             guard let login = self.client.login else {
                 throw AcmeError.mustBeAuthenticated("\(AcmeSwift.self).init() must be called with an \(AccountCredentials.self)")
             }

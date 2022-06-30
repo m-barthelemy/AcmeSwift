@@ -12,6 +12,29 @@ extension AcmeSwift {
     public struct OrdersAPI {
         fileprivate var client: AcmeSwift
         
+        
+        /// List pending orders for the Account.
+        /// WARNING: no ACMEv2 provider seems to have this actually implemented. Doesn't work with Lets Encrypt.
+        public func list() async throws -> [URL] {
+            guard let login = self.client.login else {
+                throw AcmeError.mustBeAuthenticated("\(AcmeSwift.self).init() must be called with an \(AccountCredentials.self)")
+            }
+            
+            if client.accountURL == nil {
+                let info = try await self.client.account.get()
+                client.accountURL = info.url
+            }
+            
+            let account = try await self.client.account.get()
+            var orders: [URL] = []
+            if let ordersURL = account.orders {
+                let ep = ListOrdersEndpoint(url: ordersURL)
+                let (orderInfo, _) = try await self.client.run(ep, privateKey: login.key, accountURL: client.accountURL!)
+                orders = orderInfo.orders
+            }
+            return orders
+        }
+        
         /// Creates an Order for obtaining a new certificate.
         /// - Parameters:
         ///   - domains: The domains for which we want to create a certificate. Example: `["*.mydomain.com", "mydomain.com"]`
@@ -114,7 +137,7 @@ extension AcmeSwift {
                         let challengeDesc = ChallengeDescription(
                             type: challenge.type,
                             endpoint: "_acme-challenge.\(auth.identifier.value)",
-                            value: sha256Digest(data: digest.data(using: .utf8)!).toBase64Url(),
+                            value: sha256Digest(data: digest.data(using: .utf8)!).base64ToBase64Url(),
                             url: challenge.url
                         )
                         descs.append(challengeDesc)
@@ -166,7 +189,13 @@ extension AcmeSwift {
         }
         
         
-        public func wait(order: AcmeOrderInfo, timeout: TimeInterval) async throws -> [AcmeAuthorization] {
+        /// Poll ACMEv2 provider for order status and return when challenges have been processed.
+        /// - Parameters:
+        ///   - for: The `AcmeOrderInfo` representing the certificates Order.
+        ///   - timeout: Your preferred challenge validation method. Note: when requesting a wildcard certificate, a challenge will have to be published over DNS regardless of your preferred method..
+        /// - Throws: Errors that can occur when executing the request.
+        /// - Returns: Returns a list of `AcmeAuthorization` that are not is a `valid` status.
+        public func wait(`for` order: AcmeOrderInfo, timeout: TimeInterval) async throws -> [AcmeAuthorization] {
             let startDate = Date()
             let stopDate = startDate.addingTimeInterval(timeout)
             repeat {
@@ -174,7 +203,7 @@ extension AcmeSwift {
                 let pending = authorizations.filter({$0.status == .pending})
                 if pending.count == 0 { break } // nothing to wait for
                 try await Task.sleep(nanoseconds: 5_000_000_000)
-            } while stopDate < Date()
+            } while stopDate > Date()
             
             let notReady = try await getAuthorizations(from: order)
                 .filter({$0.status != .valid})
