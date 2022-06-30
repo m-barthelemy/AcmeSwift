@@ -68,7 +68,12 @@ extension AcmeSwift {
             return info
         }
         
-        public func getAuthorizations(order: AcmeOrderInfo) async throws -> [AcmeAuthorization] {
+        /// Get the authorizations containing the challenges for this Order.
+        /// - Parameters:
+        ///   - from: The `AcmeOrderInfo` representing the certificates Order.
+        /// - Throws: Errors that can occur when executing the request.
+        /// - Returns: Returns  the list of `AcmeAuthorization` for this Order.
+        public func getAuthorizations(from order: AcmeOrderInfo) async throws -> [AcmeAuthorization] {
             guard let login = self.client.login else {
                 throw AcmeError.mustBeAuthenticated("\(AcmeSwift.self).init() must be called with an \(AccountCredentials.self)")
             }
@@ -88,20 +93,26 @@ extension AcmeSwift {
         }
         
         /// Gets a user-friendly list of the Order challenges that need to be published.
+        /// - Parameters:
+        ///   - from: The `AcmeOrderInfo` representing the certificates Order.
+        ///   - preferring: your preferred challenge method. Note: when requesting a wildcard certificate, a challenge will have to be published over DNS regardless of your preferred method..
+        /// - Throws: Errors that can occur when executing the request.
+        /// - Returns: Returns  a list of `ChallengeDescription` items that explain what information has to be published in order to validate the challenges.
         public func describePendingChallenges(from order: AcmeOrderInfo, preferring: AcmeAuthorization.Challenge.ChallengeType) async throws -> [ChallengeDescription] {
             
             let accountThumbprint = try getAccountThumbprint()
-            let authorizations = try await getAuthorizations(order: order)
+            let authorizations = try await getAuthorizations(from: order)
             var descs: [ChallengeDescription] = []
             for auth in authorizations.filter({$0.status == .pending}) {
                 for challenge in auth.challenges.filter({
                     ($0.type == preferring || auth.wildcard == true) && $0.status == .pending
                 }) {
+                    let digest = "\(challenge.token).\(accountThumbprint.toBase64Url())"
                     if challenge.type == .dns {
                         let challengeDesc = ChallengeDescription(
                             type: challenge.type,
                             endpoint: "_acme-challenge.\(auth.identifier.value)",
-                            value: challenge.token
+                            value: sha256Digest(data: digest.data(using: .utf8)!).toBase64Url()
                         )
                         descs.append(challengeDesc)
                     }
@@ -109,7 +120,7 @@ extension AcmeSwift {
                         let challengeDesc = ChallengeDescription(
                             type: challenge.type,
                             endpoint: "http://\(auth.identifier.value)/.well-known/acme-challenge/\(challenge.token)",
-                            value: "\(challenge.token).\(accountThumbprint.toBase64Url())"
+                            value: digest
                         )
                         descs.append(challengeDesc)
                     }
@@ -117,6 +128,19 @@ extension AcmeSwift {
             }
             return descs
         }
+        
+        /// Call this to get the ACMEv2 provider to verify the challenges once you have published them over HTTP or DNS
+        /// - Parameters:
+        ///   - from: The `AcmeOrderInfo` representing the certificates Order.
+        /// - Throws: Errors that can occur when executing the request.
+        /// - Returns: Returns  a list of `AcmeAuthorization` containing the challenges that could **not** be validated.
+        /*public func validatechallenges(from order: AcmeOrderInfo) async throws -> [AcmeAuthorization] {
+            // we refresh the order authorizations
+            let authorizations = try await getAuthorizations(from: order)
+            for authorization in authorizations {
+                
+            }
+        }*/
         
         /// Return the SHA256 digest of the ACMEv2 account public key's JWK JSON.
         /// This value has to be present in an HTTP challenge value.
@@ -136,12 +160,13 @@ extension AcmeSwift {
             let encoder = JSONEncoder()
             encoder.outputFormatting = .sortedKeys
             let jwkData = try! encoder.encode(jwk)
-            let digest: SHA256Digest = Crypto.SHA256.hash(data: jwkData)
+            return sha256Digest(data: jwkData)
+        }
+        
+        private func sha256Digest(data: Data) -> String {
+            let digest: SHA256Digest = Crypto.SHA256.hash(data: data)
             return digest.compactMap { String(format: "%02hhx", $0) }.joined()
         }
-        /// Call this to get the ACMEv2 provider to verify the challenges once you have published them over HTTP or DNS
-        /*public func validatechallenges(order: AcmeOrderInfo) async throws -> [AcmeAuthorization] {
-            
-        }*/
+        
     }
 }

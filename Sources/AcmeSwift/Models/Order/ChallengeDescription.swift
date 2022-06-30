@@ -6,10 +6,10 @@ public struct ChallengeDescription: Codable {
     public let type: AcmeAuthorization.Challenge.ChallengeType
     
     /// For a DNS challenge, the full DNS record name.
-    /// For an HTTP challenge, the full URL where the challenge must be published.
+    /// For an HTTP challenge, the full URL where the challenge must be published. **Must** be simple HTTP over port 80.
     public let endpoint: String
     
-    /// For a DNS challenge, the TXT record value.
-    /// For an HTTP challenge, the exact value that the `endpoint` must return
+    /// For a DNS challenge, the **TXT** record value.
+    /// For an HTTP challenge, the exact value that the `endpoint` must return over HTTP on port 80.
     public let value: String
 }

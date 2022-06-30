@@ -86,7 +86,7 @@ let finalizedOrder = try await acme.orders.finalize(order: order, withCsr: "..."
 
 Get the order authorizations and challenges: 
 ```swift
-let authorizations = try await acme.orders.getAuthorizations(order: order)
+let authorizations = try await acme.orders.getAuthorizations(from: order)
 ```
 
 You need to publish the challenges. AcmeSwift provides a way to list the pending HTTP or DNS challenges:
@@ -101,6 +101,14 @@ for desc in challengeDescriptions {
     }
 }
 ```
+Achieving this depends on your DNS provider and/or web hosting solution and is outside the scope of AcmeSwift.
+
+
+Once the challenges are published, we can ask Let's Encrypt to validate them:
+```swift
+
+```
+
 
 ### Certificates
 
