@@ -132,12 +132,12 @@ extension AcmeSwift {
                 for challenge in auth.challenges.filter({
                     ($0.type == preferring || auth.wildcard == true) && ($0.status == .pending || $0.status == .invalid)
                 }) {
-                    let digest = "\(challenge.token).\(accountThumbprint.toBase64Url())"
+                    let digest = "\(challenge.token).\(accountThumbprint.base64EncodedString().base64ToBase64Url())"
                     if challenge.type == .dns {
                         let challengeDesc = ChallengeDescription(
                             type: challenge.type,
                             endpoint: "_acme-challenge.\(auth.identifier.value)",
-                            value: sha256Digest(data: digest.data(using: .utf8)!).base64ToBase64Url(),
+                            value: sha256Digest(data: digest.data(using: .utf8)!).base64EncodedString().base64ToBase64Url(),
                             url: challenge.url
                         )
                         descs.append(challengeDesc)
@@ -222,7 +222,7 @@ extension AcmeSwift {
         
         /// Return the SHA256 digest of the ACMEv2 account public key's JWK JSON.
         /// This value has to be present in an HTTP challenge value.
-        private func getAccountThumbprint() throws -> String {
+        private func getAccountThumbprint() throws -> Data {
             guard let login = self.client.login else {
                 throw AcmeError.mustBeAuthenticated("\(AcmeSwift.self).init() must be called with an \(AccountCredentials.self)")
             }
@@ -241,12 +241,13 @@ extension AcmeSwift {
             return sha256Digest(data: jwkData)
         }
         
-        private func sha256Digest(data: Data) -> String {
+        private func sha256Digest(data: Data) -> Data {
             let digest: SHA256Digest = Crypto.SHA256.hash(data: data)
-            /*let array = digest.compactMap{UInt8($0)}
+            let array = digest.compactMap{UInt8($0)}
             let hashData = Data(array)
-            return String(data: data, encoding: .utf8)!*/
-            return digest.map { String(format: "%02hhx", $0) }.joined()
+            return hashData
+            /*return String(data: data, encoding: .utf8)!
+            return digest.map { String(format: "%02x", $0) }.joined()*/
         }
         
     }
