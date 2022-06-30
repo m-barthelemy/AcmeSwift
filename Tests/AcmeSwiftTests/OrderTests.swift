@@ -33,7 +33,7 @@ final class OrderTests: XCTestCase {
             XCTAssert(order.expires > Date(), "Ensure order expiry is parsed")
             XCTAssert(order.identifiers.count == 2, "Ensure identifiers match number of requested domains")
             
-            let authorizations = try await acme.orders.getAuthorizations(order: order)
+            let authorizations = try await acme.orders.getAuthorizations(from: order)
             let challengeDescriptions = try await acme.orders.describePendingChallenges(from: order, preferring: .http)
             for desc in challengeDescriptions {
                 if desc.type == .http {

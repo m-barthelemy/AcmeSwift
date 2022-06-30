@@ -106,8 +106,10 @@ Achieving this depends on your DNS provider and/or web hosting solution and is o
 
 Once the challenges are published, we can ask Let's Encrypt to validate them:
 ```swift
-
+let updatedChallenges = try await acme.validateChallenges(from: order, preferring: .http)
 ```
+
+Now we have to wait a bit, or periodically query the ACMEv2/LetsEncrypt provider about the status of the challengs.
 
 
 ### Certificates

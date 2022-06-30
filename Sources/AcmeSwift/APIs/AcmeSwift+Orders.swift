@@ -112,7 +112,8 @@ extension AcmeSwift {
                         let challengeDesc = ChallengeDescription(
                             type: challenge.type,
                             endpoint: "_acme-challenge.\(auth.identifier.value)",
-                            value: sha256Digest(data: digest.data(using: .utf8)!).toBase64Url()
+                            value: sha256Digest(data: digest.data(using: .utf8)!).toBase64Url(),
+                            url: challenge.url
                         )
                         descs.append(challengeDesc)
                     }
@@ -120,7 +121,8 @@ extension AcmeSwift {
                         let challengeDesc = ChallengeDescription(
                             type: challenge.type,
                             endpoint: "http://\(auth.identifier.value)/.well-known/acme-challenge/\(challenge.token)",
-                            value: digest
+                            value: digest,
+                            url: challenge.url
                         )
                         descs.append(challengeDesc)
                     }
@@ -129,18 +131,46 @@ extension AcmeSwift {
             return descs
         }
         
-        /// Call this to get the ACMEv2 provider to verify the challenges once you have published them over HTTP or DNS
+        /// Call this to get the ACMEv2 provider to verify the pending challenges once you have published them over HTTP or DNS
         /// - Parameters:
         ///   - from: The `AcmeOrderInfo` representing the certificates Order.
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  a list of `AcmeAuthorization` containing the challenges that could **not** be validated.
-        /*public func validatechallenges(from order: AcmeOrderInfo) async throws -> [AcmeAuthorization] {
-            // we refresh the order authorizations
-            let authorizations = try await getAuthorizations(from: order)
-            for authorization in authorizations {
-                
+        public func validateChallenges(from order: AcmeOrderInfo, preferring: AcmeAuthorization.Challenge.ChallengeType) async throws -> [AcmeAuthorization.Challenge] {
+            // get pending challenges
+            let pendingChallenges = try await describePendingChallenges(from: order, preferring: preferring)
+            var updatedChallenges: [AcmeAuthorization.Challenge] = []
+            for challengeDesc in pendingChallenges {
+                updatedChallenges.append(try await validateChallenge(url: challengeDesc.url))
             }
-        }*/
+            return updatedChallenges
+        }
+        
+        /// Validates a single Challenge.
+        public func validateChallenge(challenge: AcmeAuthorization.Challenge) async throws -> AcmeAuthorization.Challenge {
+            guard let login = self.client.login else {
+                throw AcmeError.mustBeAuthenticated("\(AcmeSwift.self).init() must be called with an \(AccountCredentials.self)")
+            }
+            
+            if client.accountURL == nil {
+                let info = try await self.client.account.get()
+                client.accountURL = info.url
+            }
+            
+            let ep = ValidateChallengeEndpoint(challengeURL: challenge.url)
+            let (updatedChallenge, _) = try await self.client.run(ep, privateKey: login.key, accountURL: client.accountURL!)
+            return updatedChallenge
+        }
+        
+        private func validateChallenge(url: URL) async throws -> AcmeAuthorization.Challenge {
+            guard let login = self.client.login else {
+                throw AcmeError.mustBeAuthenticated("\(AcmeSwift.self).init() must be called with an \(AccountCredentials.self)")
+            }
+            
+            let ep = ValidateChallengeEndpoint(challengeURL: url)
+            let (updatedChallenge, _) = try await self.client.run(ep, privateKey: login.key, accountURL: client.accountURL!)
+            return updatedChallenge
+        }
         
         /// Return the SHA256 digest of the ACMEv2 account public key's JWK JSON.
         /// This value has to be present in an HTTP challenge value.
@@ -165,7 +195,10 @@ extension AcmeSwift {
         
         private func sha256Digest(data: Data) -> String {
             let digest: SHA256Digest = Crypto.SHA256.hash(data: data)
-            return digest.compactMap { String(format: "%02hhx", $0) }.joined()
+            /*let array = digest.compactMap{UInt8($0)}
+            let hashData = Data(array)
+            return String(data: data, encoding: .utf8)!*/
+            return digest.map { String(format: "%02hhx", $0) }.joined()
         }
         
     }
