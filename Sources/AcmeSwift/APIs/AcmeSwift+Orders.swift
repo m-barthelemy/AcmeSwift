@@ -62,7 +62,7 @@ extension AcmeSwift {
                 client.accountURL = info.url
             }
             
-            let ep = FinalizeOrderEndpoint(orderURL: order.finalize, spec: .init(csr: withCsr))
+            let ep = FinalizeOrderEndpoint(orderURL: order.finalize, spec: .init(csr: withCsr.pemToBase64Url()))
             
             let (info, _) = try await self.client.run(ep, privateKey: login.key, accountURL: client.accountURL!)
             return info
@@ -93,9 +93,11 @@ extension AcmeSwift {
         }
         
         /// Gets a user-friendly list of the Order challenges that need to be published.
+        /// These are the challenges that have a `pending` or `invalid` status.
+        /// NOTE: ALPN challenges are not returned.
         /// - Parameters:
         ///   - from: The `AcmeOrderInfo` representing the certificates Order.
-        ///   - preferring: your preferred challenge method. Note: when requesting a wildcard certificate, a challenge will have to be published over DNS regardless of your preferred method..
+        ///   - preferring: Your preferred challenge validation method. Note: when requesting a wildcard certificate, a challenge will have to be published over DNS regardless of your preferred method..
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  a list of `ChallengeDescription` items that explain what information has to be published in order to validate the challenges.
         public func describePendingChallenges(from order: AcmeOrderInfo, preferring: AcmeAuthorization.Challenge.ChallengeType) async throws -> [ChallengeDescription] {
@@ -105,7 +107,7 @@ extension AcmeSwift {
             var descs: [ChallengeDescription] = []
             for auth in authorizations.filter({$0.status == .pending}) {
                 for challenge in auth.challenges.filter({
-                    ($0.type == preferring || auth.wildcard == true) && $0.status == .pending
+                    ($0.type == preferring || auth.wildcard == true) && ($0.status == .pending || $0.status == .invalid)
                 }) {
                     let digest = "\(challenge.token).\(accountThumbprint.toBase64Url())"
                     if challenge.type == .dns {
@@ -134,6 +136,7 @@ extension AcmeSwift {
         /// Call this to get the ACMEv2 provider to verify the pending challenges once you have published them over HTTP or DNS
         /// - Parameters:
         ///   - from: The `AcmeOrderInfo` representing the certificates Order.
+        ///   - preferring: Your preferred challenge validation method. Note: when requesting a wildcard certificate, a challenge will have to be published over DNS regardless of your preferred method..
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  a list of `AcmeAuthorization` containing the challenges that could **not** be validated.
         public func validateChallenges(from order: AcmeOrderInfo, preferring: AcmeAuthorization.Challenge.ChallengeType) async throws -> [AcmeAuthorization.Challenge] {
@@ -160,6 +163,22 @@ extension AcmeSwift {
             let ep = ValidateChallengeEndpoint(challengeURL: challenge.url)
             let (updatedChallenge, _) = try await self.client.run(ep, privateKey: login.key, accountURL: client.accountURL!)
             return updatedChallenge
+        }
+        
+        
+        public func wait(order: AcmeOrderInfo, timeout: TimeInterval) async throws -> [AcmeAuthorization] {
+            let startDate = Date()
+            let stopDate = startDate.addingTimeInterval(timeout)
+            repeat {
+                let authorizations = try await getAuthorizations(from: order)
+                let pending = authorizations.filter({$0.status == .pending})
+                if pending.count == 0 { break } // nothing to wait for
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+            } while stopDate < Date()
+            
+            let notReady = try await getAuthorizations(from: order)
+                .filter({$0.status != .valid})
+            return notReady
         }
         
         private func validateChallenge(url: URL) async throws -> AcmeAuthorization.Challenge {

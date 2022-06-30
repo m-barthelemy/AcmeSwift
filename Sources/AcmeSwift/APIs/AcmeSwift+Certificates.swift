@@ -11,7 +11,7 @@ extension AcmeSwift {
         private let separator = "-----END CERTIFICATE-----\n"
         fileprivate var client: AcmeSwift
         
-        /// Download the certificate chain for a finalized Order.
+        /// Downloads the certificate chain for a finalized Order.
         /// The certificates are returned a a list of PEM strings.
         /// The first item is the final certificate for the domain.
         /// The second item, if any, is the issuer certificate.
@@ -35,8 +35,17 @@ extension AcmeSwift {
             }
         }
         
-        public func revoke() async throws {
+        /// Revokes a previously issued certificate.
+        public func revoke(certificatePEM: String, reason: AcmeRevokeReason? = nil) async throws {
+            guard let login = self.client.login else {
+                throw AcmeError.mustBeAuthenticated("\(AcmeSwift.self).init() must be called with an \(AccountCredentials.self)")
+            }
             
+            let ep = RevokeCertificateEndpoint(
+                directory: self.client.directory, 
+                spec: .init(certificate: certificatePEM.pemToBase64Url(), reason: reason)
+            )
+            let (certificateChain, _) = try await self.client.run(ep, privateKey: login.key, accountURL: client.accountURL!)
         }
     }
 }

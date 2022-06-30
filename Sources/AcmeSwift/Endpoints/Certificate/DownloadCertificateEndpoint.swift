@@ -13,3 +13,4 @@ struct DownloadCertificateEndpoint: EndpointProtocol {
         self.url = certURL
     }
 }
+

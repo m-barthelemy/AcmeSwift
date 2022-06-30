@@ -22,6 +22,17 @@ extension String {
         result = result.replacingOccurrences(of: "=", with: "")
         return result
     }
+    
+    func pemToBase64Url() -> String {
+        return self.replacingOccurrences(of: "-----BEGIN CERTIFICATE REQUEST-----", with: "")
+            .replacingOccurrences(of: "-----BEGIN CERTIFICATE-----", with: "")
+            .replacingOccurrences(of: "-----END CERTIFICATE REQUEST-----", with: "")
+            .replacingOccurrences(of: "-----END CERTIFICATE-----", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+    }
 }
 
 extension Data {

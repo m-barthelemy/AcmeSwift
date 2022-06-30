@@ -8,7 +8,7 @@ struct CreateAccountEndpoint: EndpointProtocol {
     typealias Body = AcmeAccountSpec
     let url: URL
         
-    init(directory: AcmeDirectory,spec: AcmeAccountSpec) {
+    init(directory: AcmeDirectory, spec: AcmeAccountSpec) {
         self.body = spec
         self.url = directory.newAccount
     }

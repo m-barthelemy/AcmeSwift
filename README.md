@@ -58,6 +58,8 @@ let credentials = try AccountCredentials(contacts: ["my.email@domain.tld"], pemK
 try acme.account.use(credentials)
 ```
 
+If you created your account using AcmeSwift, the private key in PEM format is stored into the `AccountInfo.privateKeyPem` property.
+
 <br/>
 
 - Deactivate an existing account:
@@ -109,8 +111,11 @@ Once the challenges are published, we can ask Let's Encrypt to validate them:
 let updatedChallenges = try await acme.orders.validateChallenges(from: order, preferring: .http)
 ```
 
-Now we have to wait a bit, or periodically query the ACMEv2/LetsEncrypt provider about the status of the challengs.
-
+Now we have to wait a bit, or periodically query the ACMEv2/LetsEncrypt provider about the status of the challenges.
+AcmeSwift provides a convenience method that will do exactly this: periodically check the status of the order until all the challenges have been processed:
+```swift
+let order = try await acme.orders.wait(oder: order, timeout: 30 /* in seconds*/)
+```
 
 ### Certificates
 
@@ -126,3 +131,9 @@ This return a list of PEM-encoded certificates. The first item is the actual cer
 The following items are the other certificates required to establish the full certification chain (issuing CA, root CA...).
 
 The order of the items in the list is directly compatible with the way Nginx expects them; you can concatenate all the items into a single file and pass this file to the `ssl_certificate` directive.
+
+
+Revoke a certificate:
+```swift
+try await acme.certificates.revoke(certificatePEM: "....")
+```

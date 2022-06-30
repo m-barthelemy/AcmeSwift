@@ -13,6 +13,6 @@ public struct ChallengeDescription: Codable {
     /// For an HTTP challenge, the exact value that the `endpoint` must return over HTTP on port 80.
     public let value: String
     
-    /// The ACMEv2 server URL to this challenge.
+    /// The ACMEv2 server URL for validating this challenge.
     internal let url: URL
 }
