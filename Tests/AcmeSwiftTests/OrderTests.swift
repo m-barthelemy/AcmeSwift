@@ -74,8 +74,10 @@ final class OrderTests: XCTestCase {
             let finalized = try await acme.orders.finalize(order: order, withPemCsr: csr)
             let certs = try await acme.certificates.download(for: finalized)
             for var cert in certs {
-                print("\n • cert: \(cert)")
+                print("\n • cert: '\(cert)'")
             }
+
+            try certs.joined(separator: "\n").write(to: URL(fileURLWithPath: "cert.pem"), atomically: true, encoding: .utf8)
         }
         catch(let error) {
             print("\n•••• BOOM! \(error)")

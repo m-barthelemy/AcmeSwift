@@ -30,9 +30,13 @@ extension AcmeSwift {
             
             let ep = DownloadCertificateEndpoint(certURL: certURL)
             let (certificateChain, _) = try await self.client.run(ep, privateKey: login.key, accountURL: client.accountURL!)
-            return certificateChain.components(separatedBy: self.separator).map{ str in
-                return "\(str)\(separator)"
+            var certificates: [String] = []
+            for certificate in  certificateChain.components(separatedBy: self.separator) {
+                if certificate != "" {
+                    certificates.append("\(certificate)\(separator)".trimmingCharacters(in: .newlines))
+                }
             }
+            return certificates
         }
         
         /// Revokes a previously issued certificate.
