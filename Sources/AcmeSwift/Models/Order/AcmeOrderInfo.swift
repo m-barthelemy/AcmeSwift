@@ -3,14 +3,19 @@ import Foundation
 /// Information returned when creating a new Order
 public struct AcmeOrderInfo: Codable {
     
+    /// The current status of the Order.
     public let status: OrderStatus
     
+    /// Date after which the order must be started from scratch if still not valid.
     public let expires: Date
     
+    /// Date when the certificate requested by this Order should start being valid.
     public let notBefore: Date?
     
+    /// Desired expiry date of the certificate requested by this Order.
     public let notAfter: Date?
     
+    /// DNS names for which we are requesting a certificate.
     public let identifiers: [AcmeOrderSpec.Identifier]
     
     public let authorizations: [URL]
@@ -20,7 +25,6 @@ public struct AcmeOrderInfo: Codable {
     
     /// URL to call to obtain the certificate  when the Order has been finalized and has a `valid` status.
     public let certificate: URL?
-    
     
     
     public enum OrderStatus: String, Codable {

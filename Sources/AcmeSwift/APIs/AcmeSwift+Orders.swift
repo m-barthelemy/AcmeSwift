@@ -16,20 +16,13 @@ extension AcmeSwift {
         /// List pending orders for the Account.
         /// WARNING: no ACMEv2 provider seems to have this actually implemented. Doesn't work with Lets Encrypt.
         public func list() async throws -> [URL] {
-            guard let login = self.client.login else {
-                throw AcmeError.mustBeAuthenticated("\(AcmeSwift.self).init() must be called with an \(AccountCredentials.self)")
-            }
-            
-            if client.accountURL == nil {
-                let info = try await self.client.account.get()
-                client.accountURL = info.url
-            }
+            try await self.client.ensureLogged()
             
             let account = try await self.client.account.get()
             var orders: [URL] = []
             if let ordersURL = account.orders {
                 let ep = ListOrdersEndpoint(url: ordersURL)
-                let (orderInfo, _) = try await self.client.run(ep, privateKey: login.key, accountURL: client.accountURL!)
+                let (orderInfo, _) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
                 orders = orderInfo.orders
             }
             return orders
@@ -43,14 +36,7 @@ extension AcmeSwift {
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  the `Account`.
         public func create(domains: [String], notBefore: Date? = nil, notAfter: Date? = nil) async throws -> AcmeOrderInfo {
-            guard let login = self.client.login else {
-                throw AcmeError.mustBeAuthenticated("\(AcmeSwift.self).init() must be called with an \(AccountCredentials.self)")
-            }
-            
-            if client.accountURL == nil {
-                let info = try await self.client.account.get()
-                client.accountURL = info.url
-            }
+            try await self.client.ensureLogged()
             
             var identifiers: [AcmeOrderSpec.Identifier] = []
             for domain in domains {
@@ -65,7 +51,7 @@ extension AcmeSwift {
                 )
             )
             
-            let (info, _) = try await self.client.run(ep, privateKey: login.key, accountURL: client.accountURL!)
+            let (info, _) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
             return info
         }
         

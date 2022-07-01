@@ -134,7 +134,8 @@ Once all the authorizations/challenges are valid, we can finalize the Order by s
 ```swift
 let finalizedOrder = try await acme.orders.finalize(order: order, withPemCsr: "...")
 ```
-Note: AcmeSwift currently doesn't implement any way of generating CSRs or private keys.
+The CSR must contain all the DNS names requested by the Order in the SAN (subjectAltName) field.
+> Note: AcmeSwift currently doesn't implement any way of generating CSRs or private keys.
 
 
 <br/>
