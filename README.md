@@ -102,6 +102,8 @@ for desc in challengeDescriptions {
 }
 ```
 Achieving this depends on your DNS provider and/or web hosting solution and is outside the scope of AcmeSwift.
+> Note: if you are requesting a wildcard certificate and choose `.http` as the preferred validation method, you will still get a DNS challenge to complete.
+Let's Encrypt only allows DNS validation for wildcard certificates.
 
 <br/>
 
@@ -157,3 +159,4 @@ Revoke a certificate:
 ```swift
 try await acme.certificates.revoke(certificatePEM: "....")
 ```
+
