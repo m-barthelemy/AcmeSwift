@@ -40,7 +40,7 @@ extension AcmeSwift {
         public func revoke(certificatePem: String, reason: AcmeRevokeReason? = nil) async throws {
             try await self.client.ensureLogged()
             
-            let csrBytes = certificatePEM.pemToData()
+            let csrBytes = certificatePem.pemToData()
             let pemStr = csrBytes.toBase64UrlString()
             
             let ep = RevokeCertificateEndpoint(
