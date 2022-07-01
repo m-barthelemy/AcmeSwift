@@ -128,7 +128,7 @@ let authorizations = try await acme.orders.getAuthorizations(from: order)
 
 <br/>
 
-You now need to publish the challenges. AcmeSwift provides a way to list the pending HTTP or DNS challenges:
+You will need to publish the challenges. AcmeSwift provides a way to list the pending HTTP or DNS challenges:
 ```swift
 let challengeDescs = try await acme.orders.describePendingChallenges(from: order, preferring: .http)
 for desc in challengeDescs {
