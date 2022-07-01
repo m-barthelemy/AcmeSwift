@@ -141,7 +141,7 @@ Note: AcmeSwift currently doesn't implement any way of generating CSRs or privat
 
 ### Certificates
 
-Download a certificate:
+- Download a certificate:
 
 > This assumes that the corresponding Order has been finalized successfully, meaning that the Order `status` field is `valid`.
 
@@ -162,7 +162,7 @@ try certs.joined(separator: "\n").write(to: URL(fileURLWithPath: "cert.pem"), at
 
 <br/>
 
-Revoke a certificate:
+- Revoke a certificate:
 ```swift
 try await acme.certificates.revoke(certificatePEM: "....")
 ```
