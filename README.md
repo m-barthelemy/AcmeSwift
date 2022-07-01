@@ -102,10 +102,16 @@ Fetch an Order by its URL:
 let latest = try await acme.orders.get(order: order.url!)
 ```
 
+<br/>
+
+
 Refresh an Order instance with latest information from the server:
 ```swift
 try await acme.orders.refresh(order: &order)
 ```
+
+<br/>
+
 
 Create an Order for a new certificate:
 ```swift
