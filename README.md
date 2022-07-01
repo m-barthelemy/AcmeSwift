@@ -37,12 +37,16 @@ let package = Package(
 
 Create an instance of the client:
 ```swift
+import AcmeSwift
+
 let acme = try await AcmeSwift()
 
 ```
 
 When testing, preferably use the Let's Encrypt staging endpoint:
 ```swift
+import AcmeSwift
+
 let acme = try await AcmeSwift(acmeEndpoint: AcmeServer.letsEncryptStaging)
 
 ```
