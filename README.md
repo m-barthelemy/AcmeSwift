@@ -97,16 +97,25 @@ try await acme.account.deactivate()
 
 ### Orders (certificate requests)
 
- Create an order for a new certificate:
+Fetch an Order by its URL:
+```swift
+let latest = try await acme.orders.get(order: order.url!)
+```
+
+Refresh an Order instance with latest information from the server:
+```swift
+try await acme.orders.refresh(order: &order)
+```
+
+Create an Order for a new certificate:
+```swift
  
- ```swift
- 
- let order = try await acme.orders.create(domains: ["mydomain.com", "www.mydomain.com"])
- ```
+let order = try await acme.orders.create(domains: ["mydomain.com", "www.mydomain.com"])
+```
 
 <br/>
 
-Get the order authorizations and challenges: 
+Get the Order authorizations and challenges: 
 ```swift
 let authorizations = try await acme.orders.getAuthorizations(from: order)
 ```
@@ -134,17 +143,6 @@ Let's Encrypt only allows DNS validation for wildcard certificates.
 Once the challenges are published, we can ask Let's Encrypt to validate them:
 ```swift
 let updatedChallenges = try await acme.orders.validateChallenges(from: order, preferring: .http)
-```
-
-<br/>
-
-Now we have to wait a bit, or periodically query the ACMEv2/LetsEncrypt provider about the status of the challenges.
-AcmeSwift provides a convenience method that will do exactly this: periodically check the status of the order until all the challenges have been processed:
-```swift
-let failedAuthorizations = try await acme.orders.wait(order: order, timeout: 30 /* in seconds*/) 
-guard failedAuthorizations.count == 0 else {
-    fatalError("Some challenges were not validated! \(failedAuthorizations)")
-}
 ```
 
 <br/>
@@ -219,7 +217,8 @@ for desc in try await acme.orders.describePendingChallenges(from: order, preferr
 [.... publish the DNS challenge records ....]
 
 
-// Assuming the challenges have been published, we can now ask Let's Encrypt to validate them
+// Assuming the challenges have been published, we can now ask Let's Encrypt to validate them.
+// If some challenges fail to validate, it is safe to call validateChallenges() again after fixing the underlying issue.
 try await acme.orders.validateChallenges(from: order, preferring: .dns)
 
 // If the validation didn't throw any error, we can now send our Certificate Signing Request...

@@ -16,7 +16,7 @@ extension AcmeSwift {
         /// The first item is the final certificate for the domain.
         /// The second item, if any, is the issuer certificate.
         public func download(`for` order: AcmeOrderInfo) async throws -> [String] {
-            try await self.client.ensureLogged()
+            try await self.client.ensureLoggedIn()
             
             guard order.status == .valid, let certURL = order.certificate else {
                 throw AcmeError.certificateNotReady(order.status, "Order must have a `valid` status. Some challenges might not have been completed yet")
@@ -38,7 +38,7 @@ extension AcmeSwift {
         /// - Parameters:
         ///   - certificatePem: The Certificate **in PEM format**.
         public func revoke(certificatePem: String, reason: AcmeRevokeReason? = nil) async throws {
-            try await self.client.ensureLogged()
+            try await self.client.ensureLoggedIn()
             
             let csrBytes = certificatePem.pemToData()
             let pemStr = csrBytes.toBase64UrlString()

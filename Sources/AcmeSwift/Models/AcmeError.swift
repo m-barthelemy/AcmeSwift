@@ -23,6 +23,9 @@ public enum AcmeError: Error {
     
     case dataCorrupted(String)
     case errorCode(UInt, String?)
+    
+    /// A resource should have a URL, returned in a response "Location" header, but couldn't find or parse the header.
+    case noResourceUrl
 }
 
 public struct AcmeResponseError: Codable, Error {

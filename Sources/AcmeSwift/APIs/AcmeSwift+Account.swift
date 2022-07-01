@@ -99,7 +99,7 @@ extension AcmeSwift {
         /// Certificates issued by the account prior to deactivation will normally not be revoked.
         /// WARNING: ACME does not provide a way to reactivate a deactivated account.
         public func deactivate() async throws {
-            try await self.client.ensureLogged()
+            try await self.client.ensureLoggedIn()
             let ep = DeactivateAccountEndpoint(accountURL: client.accountURL!)
             let (info, _) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
             guard info.status == .deactivated else {

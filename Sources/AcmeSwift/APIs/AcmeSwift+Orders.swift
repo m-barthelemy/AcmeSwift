@@ -16,7 +16,7 @@ extension AcmeSwift {
         /// List pending orders for the Account.
         /// WARNING: no ACMEv2 provider seems to have this actually implemented. Doesn't work with Lets Encrypt.
         public func list() async throws -> [URL] {
-            try await self.client.ensureLogged()
+            try await self.client.ensureLoggedIn()
             
             let account = try await self.client.account.get()
             var orders: [URL] = []
@@ -28,17 +28,27 @@ extension AcmeSwift {
             return orders
         }
         
-        /// Fetches the latest status of an existing Order
-        /// - Parameters:
-        ///   - order: an existing Order object..
-        public func get(order: AcmeOrderInfo) async throws -> AcmeOrderInfo {
-            
-        }
         
         /// Fetches the latest status of an existing Order
         /// - Parameters:
-        ///   - url: The URL of the ORder.
+        ///   - url: The URL of the Order.
         public func get(url: URL) async throws -> AcmeOrderInfo {
+            let ep = GetOrderEndpoint(url: url)
+            var (info, headers) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
+            info.url = URL(string: headers["Location"].first ?? "")
+            return info
+        }
+        
+        /// Fetches the latest information about an existing Order
+        /// - Parameters:
+        ///   - order: an existing Order object to be updated.
+        public func refresh(order: inout AcmeOrderInfo) async throws {
+            try await self.client.ensureLoggedIn()
+            
+            guard let url = order.url else {
+                throw AcmeError.noResourceUrl
+            }
+            order = try await get(url: url)
         }
         
         
@@ -50,7 +60,7 @@ extension AcmeSwift {
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  the `Account`.
         public func create(domains: [String], notBefore: Date? = nil, notAfter: Date? = nil) async throws -> AcmeOrderInfo {
-            try await self.client.ensureLogged()
+            try await self.client.ensureLoggedIn()
             
             var identifiers: [AcmeOrderSpec.Identifier] = []
             for domain in domains {
@@ -65,7 +75,8 @@ extension AcmeSwift {
                 )
             )
             
-            let (info, _) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
+            var (info, headers) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
+            info.url = URL(string: headers["Location"].first ?? "")
             return info
         }
         
@@ -76,7 +87,7 @@ extension AcmeSwift {
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  the `Account`.
         public func finalize(order: AcmeOrderInfo, withPemCsr: String) async throws -> AcmeOrderInfo {
-            try await self.client.ensureLogged()
+            try await self.client.ensureLoggedIn()
             
             let csrBytes = withPemCsr.pemToData()
             let pemStr = csrBytes.toBase64UrlString()
@@ -92,7 +103,7 @@ extension AcmeSwift {
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  the list of `AcmeAuthorization` for this Order.
         public func getAuthorizations(from order: AcmeOrderInfo) async throws -> [AcmeAuthorization] {
-            try await self.client.ensureLogged()
+            try await self.client.ensureLoggedIn()
             
             var authorizations: [AcmeAuthorization] = []
             for auth in order.authorizations {
@@ -163,7 +174,7 @@ extension AcmeSwift {
         
         /// Validates a single Challenge.
         public func validateChallenge(challenge: AcmeAuthorization.Challenge) async throws -> AcmeAuthorization.Challenge {
-            try await self.client.ensureLogged()
+            try await self.client.ensureLoggedIn()
             
             let ep = ValidateChallengeEndpoint(challengeURL: challenge.url)
             let (updatedChallenge, _) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
@@ -177,7 +188,7 @@ extension AcmeSwift {
         ///   - timeout: Your preferred challenge validation method. Note: when requesting a wildcard certificate, a challenge will have to be published over DNS regardless of your preferred method..
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns a list of `AcmeAuthorization` that are not is a `valid` status.
-        public func wait(`for` order: AcmeOrderInfo, timeout: TimeInterval) async throws -> [AcmeAuthorization] {
+        /*public func wait(`for` order: AcmeOrderInfo, timeout: TimeInterval) async throws -> [AcmeAuthorization] {
             let startDate = Date()
             let stopDate = startDate.addingTimeInterval(timeout)
             repeat {
@@ -190,10 +201,10 @@ extension AcmeSwift {
             let notReady = try await getAuthorizations(from: order)
                 .filter({$0.status != .valid})
             return notReady
-        }
+        }*/
         
         private func validateChallenge(url: URL) async throws -> AcmeAuthorization.Challenge {
-            try await self.client.ensureLogged()
+            try await self.client.ensureLoggedIn()
             
             let ep = ValidateChallengeEndpoint(challengeURL: url)
             let (updatedChallenge, _) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)

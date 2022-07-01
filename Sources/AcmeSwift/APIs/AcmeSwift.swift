@@ -4,7 +4,6 @@ import NIOHTTP1
 import NIOSSL
 import AsyncHTTPClient
 import Logging
-//import JWTKit
 import Crypto
 
 /// The entry point for Acmev2 client commands.
@@ -30,18 +29,13 @@ public class AcmeSwift {
         self.server = acmeEndpoint
         self.logger = logger
         
-        //let format = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSSS'Z'"
-        //let formatter = DateFormatter()
-        //formatter.dateFormat = format
-        
         let decoder = JSONDecoder()
-        //decoder.dateDecodingStrategy = .formatted(formatter)
         decoder.dateDecodingStrategy = .iso8601
         self.decoder = decoder
         
         var request = HTTPClientRequest(url: acmeEndpoint.absoluteString)
         request.method = .GET
-        self.directory = try await self.client.execute(request, deadline: .now() + TimeAmount.seconds(15), logger: self.logger)
+        self.directory = try await self.client.execute(request, deadline: .now() + TimeAmount.seconds(30), logger: self.logger)
             .decode(as: AcmeDirectory.self)
     }
     
@@ -62,9 +56,9 @@ public class AcmeSwift {
     }
     
     /// Ensure we have account credentials for actions that require it.
-    internal func ensureLogged() async throws {
+    internal func ensureLoggedIn() async throws {
         guard self.login != nil else {
-            throw AcmeError.mustBeAuthenticated("\(AcmeSwift.self).init() must be called with an \(AccountCredentials.self)")
+            throw AcmeError.mustBeAuthenticated("Request requires credentials")
         }
         
         if self.accountURL == nil {
@@ -87,7 +81,7 @@ public class AcmeSwift {
             finalHeaders.add(contentsOf: additionalHeaders)
         }
         
-        var request = HTTPClientRequest(url: /*"https://webhook.site/13b95f20-62a9-41c9-92c7-c535e41144dd"*/ endpoint.url.absoluteString)
+        var request = HTTPClientRequest(url: endpoint.url.absoluteString)
         request.method = endpoint.method
         request.headers = finalHeaders
         
@@ -121,7 +115,6 @@ public struct AcmeServer {
     /// The staging Let's Encrypt endpoint, for tests. Issues certificate not recognized by clients/browsers
     public static var letsEncryptStaging: URL {
         URL(string: "https://acme-staging-v02.api.letsencrypt.org/directory")!
-        //URL(string: "https://webhook.site/13b95f20-62a9-41c9-92c7-c535e41144dd")!
     }
     
     /// A custom URL to a service compatible with ACMEv2 protocol

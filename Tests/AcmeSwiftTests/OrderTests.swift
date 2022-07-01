@@ -24,20 +24,35 @@ final class OrderTests: XCTestCase {
         let acme = try await AcmeSwift(client: self.http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
         defer {try? acme.syncShutdown()}
         do {
-            let account = try await acme.account.create(contacts: ["bonsouere3456@gmail.com", "bonsouere+299@gmail.com"], acceptTOS: true)
-            try acme.account.use(account)
+            let privateKeyPem = """
+            -----BEGIN PRIVATE KEY-----
+            MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQglxrdsu3lP83xzUej
+            ytJ7zvy2uuW3Qt7SWGRiGx8dJJuhRANCAARcpivMPbQWA/T2h8YNQPgOF+8jhyaY
+            iO6kepubzBqqgk/iub3w+ZBDfKi6RgGYX2yVRlHMS4ZhhSoFFLoP57eI
+            -----END PRIVATE KEY-----
+            """
+            let contacts = ["mailto:bonsouere3456@gmail.com"]
             
-            let order = try await acme.orders.create(domains: ["www.burrito.run"])
-            //print("\n••• Order: \(order)")
-            XCTAssert(order.status == .pending, "Ensure order is pending")
-            XCTAssert(order.expires > Date(), "Ensure order expiry is parsed")
-            XCTAssert(order.identifiers.count == 2, "Ensure identifiers match number of requested domains")
+            let login = try AccountCredentials(contacts: contacts, pemKey: privateKeyPem)
+            let acme = try await AcmeSwift(client: self.http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
+            defer {try? acme.syncShutdown()}
+            
+            try acme.account.use(login)
+            
+            var order = try await acme.orders.create(domains: ["burrito.run", "www.burrito.run"])
+            XCTAssert(order.url != nil, "Ensure order has URL")
+            XCTAssert(order.status == .pending, "Ensure order is pending (got \(order.status)")
+            XCTAssert(order.expires > Date(), "Ensure order expiry is parsed (got \(order.expires)")
+            XCTAssert(order.identifiers.count == 2, "Ensure identifiers match number of requested domains (expected 2, got \(order.identifiers.count)")
             
             let authorizations = try await acme.orders.getAuthorizations(from: order)
-            XCTAssert(authorizations.count == 1, "Ensure we only have 1 authorization")
+            XCTAssert(authorizations.count == 2, "Ensure we only have 1 authorization")
             
             let challengeDescriptions = try await acme.orders.describePendingChallenges(from: order, preferring: .dns)
-            XCTAssert(challengeDescriptions.count == 1, "Ensure we have 1 pending challenge")
+            XCTAssert(challengeDescriptions.count == 2, "Ensure we have 1 pending challenge")
+            XCTAssert(challengeDescriptions.filter({$0.type == .dns}).count == 2, "Ensure challenges are of the desired type")
+            
+            try await acme.orders.refresh(order: &order)
 
         }
         catch(let error) {
@@ -46,7 +61,7 @@ final class OrderTests: XCTestCase {
         }
     }
     
-    func wrapItUpLikeABurrito() async throws {
+    /*func wrapItUpLikeABurrito() async throws {
         let privateKeyPem = """
             -----BEGIN PRIVATE KEY-----
             MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQglxrdsu3lP83xzUej
@@ -76,10 +91,7 @@ final class OrderTests: XCTestCase {
         try await Task.sleep(nanoseconds: 60_000_000_000)
         
         try await acme.orders.validateChallenges(from: order, preferring: .dns)
-        let failedAuthorizations = try await acme.orders.wait(for: order, timeout: 60 /* in seconds*/)
-        guard failedAuthorizations.count == 0 else {
-            fatalError("\n#### Some challenges were not validated! \(failedAuthorizations)")
-        }
+        
         let csr = """
             -----BEGIN CERTIFICATE REQUEST-----
             MIIChDCCAWwCAQAwFjEUMBIGA1UEAwwLd3d3Lm51dy5ydW4wggEiMA0GCSqGSIb3
@@ -102,7 +114,7 @@ final class OrderTests: XCTestCase {
         let certs = try await acme.certificates.download(for: finalized)
         try certs.joined(separator: "\n").write(to: URL(fileURLWithPath: "cert.pem"), atomically: true, encoding: .utf8)
 
-    }
+    }*/
     
     private func toJson<T: Encodable>(_ value: T) -> String {
         let encoder = JSONEncoder()

@@ -2,6 +2,9 @@ import Foundation
 
 /// Information returned when creating a new Order
 public struct AcmeOrderInfo: Codable {
+        
+    /// The URL of this Order.
+    internal(set) public var url: URL?
     
     /// The current status of the Order.
     public let status: OrderStatus

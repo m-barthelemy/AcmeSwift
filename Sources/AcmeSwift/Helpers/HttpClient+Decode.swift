@@ -20,9 +20,9 @@ extension HTTPClientResponse {
         try await checkStatusCode()
         
         var body = try await self.body.collect(upTo: 2 * 1024 * 1024) // 2 MB
-        /*if T.self == NoBody.self || T.self == NoBody?.self {
+        if T.self == NoBody.self || T.self == NoBody?.self {
             return NoBody() as! T
-        }*/
+        }
         
         guard let data = body.readData(length: body.readableBytes) else {
             throw AcmeError.dataCorrupted("Unable to read Data from response body buffer")
@@ -30,6 +30,7 @@ extension HTTPClientResponse {
         if T.self == String.self {
             return String(data: data, encoding: .utf8) as! T
         }
+        
         return try decoder.decode(type, from: Data(data))
     }
     
