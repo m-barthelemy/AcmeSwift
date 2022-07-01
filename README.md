@@ -79,13 +79,17 @@ try await acme.account.deactivate()
  
  let order = try await acme.orders.create(domains: ["mydomain.com", "www.mydomain.com"])
  ```
- 
+
+<br/>
+
 Get the order authorizations and challenges: 
 ```swift
 let authorizations = try await acme.orders.getAuthorizations(from: order)
 ```
 
-You need to publish the challenges. AcmeSwift provides a way to list the pending HTTP or DNS challenges:
+<br/>
+
+You now need to publish the challenges. AcmeSwift provides a way to list the pending HTTP or DNS challenges:
 ```swift
 let challengeDescriptions = try await acme.orders.describePendingChallenges(from: order, preferring: .http)
 for desc in challengeDescriptions {
@@ -99,11 +103,14 @@ for desc in challengeDescriptions {
 ```
 Achieving this depends on your DNS provider and/or web hosting solution and is outside the scope of AcmeSwift.
 
+<br/>
 
 Once the challenges are published, we can ask Let's Encrypt to validate them:
 ```swift
 let updatedChallenges = try await acme.orders.validateChallenges(from: order, preferring: .http)
 ```
+
+<br/>
 
 Now we have to wait a bit, or periodically query the ACMEv2/LetsEncrypt provider about the status of the challenges.
 AcmeSwift provides a convenience method that will do exactly this: periodically check the status of the order until all the challenges have been processed:
@@ -113,6 +120,8 @@ guard failedAuthorizations.count == 0 else {
     fatalError("Some challenges were not validated! \(failedAuthorizations)")
 }
 ```
+
+<br/>
 
 Once all the authorizations/challenges are valid, we can finalize the Order by sending the CSR in PEM format:
 ```swift
@@ -136,6 +145,7 @@ The following items are the other certificates required to establish the full ce
 
 The order of the items in the list is directly compatible with the way Nginx expects them; you can concatenate all the items into a single file and pass this file to the `ssl_certificate` directive.
 
+<br/>
 
 Revoke a certificate:
 ```swift
