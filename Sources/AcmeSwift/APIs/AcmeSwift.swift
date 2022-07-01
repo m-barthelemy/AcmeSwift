@@ -61,6 +61,17 @@ public class AcmeSwift {
         return nonce
     }
     
+    /// Ensure we have account credentials for actions that require it.
+    internal func ensureLogged() async throws {
+        guard self.login != nil else {
+            throw AcmeError.mustBeAuthenticated("\(AcmeSwift.self).init() must be called with an \(AccountCredentials.self)")
+        }
+        
+        if self.accountURL == nil {
+            let info = try await self.account.get()
+            self.accountURL = info.url
+        }
+    }
     /// Executes a request to a specific endpoint. The `Endpoint` struct provides all necessary data and parameters for the request.
     /// - Parameter endpoint: `Endpoint` instance with all necessary data and parameters.
     /// - Throws: It can throw an error when encoding the body of the `Endpoint` request to JSON.

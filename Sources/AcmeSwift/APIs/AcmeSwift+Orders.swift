@@ -76,20 +76,13 @@ extension AcmeSwift {
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  the `Account`.
         public func finalize(order: AcmeOrderInfo, withPemCsr: String) async throws -> AcmeOrderInfo {
-            guard let login = self.client.login else {
-                throw AcmeError.mustBeAuthenticated("\(AcmeSwift.self).init() must be called with an \(AccountCredentials.self)")
-            }
-            
-            if client.accountURL == nil {
-                let info = try await self.client.account.get()
-                client.accountURL = info.url
-            }
+            try await self.client.ensureLogged()
             
             let csrBytes = withPemCsr.pemToData()
             let pemStr = csrBytes.toBase64UrlString()
             let ep = FinalizeOrderEndpoint(orderURL: order.finalize, spec: .init(csr: pemStr))
             
-            let (info, _) = try await self.client.run(ep, privateKey: login.key, accountURL: client.accountURL!)
+            let (info, _) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
             return info
         }
         
@@ -99,19 +92,12 @@ extension AcmeSwift {
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  the list of `AcmeAuthorization` for this Order.
         public func getAuthorizations(from order: AcmeOrderInfo) async throws -> [AcmeAuthorization] {
-            guard let login = self.client.login else {
-                throw AcmeError.mustBeAuthenticated("\(AcmeSwift.self).init() must be called with an \(AccountCredentials.self)")
-            }
-            
-            if client.accountURL == nil {
-                let info = try await self.client.account.get()
-                client.accountURL = info.url
-            }
+            try await self.client.ensureLogged()
             
             var authorizations: [AcmeAuthorization] = []
             for auth in order.authorizations {
                 let ep = GetAuthorizationEndpoint(url: auth)
-                let (authorization, _) = try await self.client.run(ep, privateKey: login.key, accountURL: client.accountURL!)
+                let (authorization, _) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
                 authorizations.append(authorization)
             }
             return authorizations
@@ -176,17 +162,10 @@ extension AcmeSwift {
         
         /// Validates a single Challenge.
         public func validateChallenge(challenge: AcmeAuthorization.Challenge) async throws -> AcmeAuthorization.Challenge {
-            guard let login = self.client.login else {
-                throw AcmeError.mustBeAuthenticated("\(AcmeSwift.self).init() must be called with an \(AccountCredentials.self)")
-            }
-            
-            if client.accountURL == nil {
-                let info = try await self.client.account.get()
-                client.accountURL = info.url
-            }
+            try await self.client.ensureLogged()
             
             let ep = ValidateChallengeEndpoint(challengeURL: challenge.url)
-            let (updatedChallenge, _) = try await self.client.run(ep, privateKey: login.key, accountURL: client.accountURL!)
+            let (updatedChallenge, _) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
             return updatedChallenge
         }
         
@@ -213,12 +192,10 @@ extension AcmeSwift {
         }
         
         private func validateChallenge(url: URL) async throws -> AcmeAuthorization.Challenge {
-            guard let login = self.client.login else {
-                throw AcmeError.mustBeAuthenticated("\(AcmeSwift.self).init() must be called with an \(AccountCredentials.self)")
-            }
+            try await self.client.ensureLogged()
             
             let ep = ValidateChallengeEndpoint(challengeURL: url)
-            let (updatedChallenge, _) = try await self.client.run(ep, privateKey: login.key, accountURL: client.accountURL!)
+            let (updatedChallenge, _) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
             return updatedChallenge
         }
         
