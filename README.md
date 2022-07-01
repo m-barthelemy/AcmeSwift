@@ -187,8 +187,7 @@ try acme.account.use(credentials)
 let order = try await acme.orders.create(domains: ["mydomain.com", "www.mydomain.com"])
 
 // ... after that, now we can fetch the challenges we need to complete
-let descriptions = try await acme.orders.describePendingChallenges(from: order, preferring: .dns)
-for desc in challengeDescriptions {
+for desc in try await acme.orders.describePendingChallenges(from: order, preferring: .dns) {
     if desc.type == .http {
         print("\n • The URL \(desc.endpoint) needs to return \(desc.value)")
     }
