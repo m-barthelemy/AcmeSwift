@@ -28,6 +28,8 @@ let acme = try await AcmeSwift(acmeEndpoint: AcmeServer.letsEncryptStaging)
 
 ```
 
+<br/>
+
 
 ### Account
 
@@ -70,6 +72,9 @@ If you created your account using AcmeSwift, the private key in PEM format is st
 
 try await acme.account.deactivate()
 ```
+
+<br/>
+
 
 ### Orders (certificate requests)
 
@@ -131,6 +136,8 @@ let finalizedOrder = try await acme.orders.finalize(order: order, withPemCsr: ".
 ```
 Note: AcmeSwift currently doesn't implement any way of generating CSRs or private keys.
 
+
+<br/>
 
 ### Certificates
 
