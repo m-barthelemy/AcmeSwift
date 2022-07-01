@@ -14,6 +14,25 @@ Publishing the challenge, either by creating DNS record or exposing the value ov
 Additionally, this library currently doesn't provide any way to generate a private key or a CSR.
 
 
+## Installation
+```swift
+import PackageDescription
+
+let package = Package(
+    dependencies: [
+        ...
+        .package(url: "https://github.com/m-barthelemy/AcmeSwift.git", .branch("master")),
+    ],
+    targets: [
+        .target(name: "App", dependencies: [
+            ...
+            .product(name: "AcmeSwift", package: "AcmeSwift")
+        ]),
+    ...
+    ]
+)
+```
+
 ## Usage
 
 Create an instance of the client:
