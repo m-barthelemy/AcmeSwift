@@ -96,8 +96,8 @@ let authorizations = try await acme.orders.getAuthorizations(from: order)
 
 You now need to publish the challenges. AcmeSwift provides a way to list the pending HTTP or DNS challenges:
 ```swift
-let challengeDescriptions = try await acme.orders.describePendingChallenges(from: order, preferring: .http)
-for desc in challengeDescriptions {
+let challengeDescs = try await acme.orders.describePendingChallenges(from: order, preferring: .http)
+for desc in challengeDescs {
     if desc.type == .http {
         print("\n • The URL \(desc.endpoint) needs to return \(desc.value)")
     }
@@ -134,7 +134,7 @@ Once all the authorizations/challenges are valid, we can finalize the Order by s
 ```swift
 let finalizedOrder = try await acme.orders.finalize(order: order, withPemCsr: "...")
 ```
-The CSR must contain all the DNS names requested by the Order in the SAN (subjectAltName) field.
+The CSR must contain all the DNS names requested by the Order in its SAN (subjectAltName) field.
 > Note: AcmeSwift currently doesn't implement any way of generating CSRs or private keys.
 
 
@@ -158,7 +158,8 @@ The following items are the other certificates required to establish the full ce
 
 The order of the items in the list is directly compatible with the way Nginx expects them; you can concatenate all the items into a single file and pass this file to the `ssl_certificate` directive:
 ```swift
-try certs.joined(separator: "\n").write(to: URL(fileURLWithPath: "cert.pem"), atomically: true, encoding: .utf8)
+try certs.joined(separator: "\n")
+    .write(to: URL(fileURLWithPath: "cert.pem"), atomically: true, encoding: .utf8)
 ```
 
 <br/>
