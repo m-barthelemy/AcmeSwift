@@ -35,19 +35,25 @@ extension String {
             .replacingOccurrences(of: "-----BEGIN CERTIFICATE-----", with: "")
             .replacingOccurrences(of: "-----END CERTIFICATE REQUEST-----", with: "")
             .replacingOccurrences(of: "-----END CERTIFICATE-----", with: "")
+            .replacingOccurrences(of: "\n", with: "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: "+", with: "-")
-            .replacingOccurrences(of: "/", with: "_")
-            .replacingOccurrences(of: "=", with: "")
+            .toBase64Url()
+    }
+    
+    /// This converts a PEM cert back to DER
+    func pemToData() -> Data {
+        let rawData = self.replacingOccurrences(of: "-----BEGIN CERTIFICATE REQUEST-----", with: "")
+            .replacingOccurrences(of: "-----BEGIN CERTIFICATE-----", with: "")
+            .replacingOccurrences(of: "-----END CERTIFICATE REQUEST-----", with: "")
+            .replacingOccurrences(of: "-----END CERTIFICATE-----", with: "")
+            .replacingOccurrences(of: "\n", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return Data(base64Encoded: rawData)!
     }
 }
 
 extension Data {
     func toBase64UrlString() -> String {
-        var result = self.base64EncodedString()
-        result = result.replacingOccurrences(of: "+", with: "-")
-        result = result.replacingOccurrences(of: "/", with: "_")
-        result = result.replacingOccurrences(of: "=", with: "")
-        return result
+        return self.base64EncodedString().base64ToBase64Url()
     }
 }

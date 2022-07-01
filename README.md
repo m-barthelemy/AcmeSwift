@@ -114,10 +114,11 @@ guard failedAuthorizations.count == 0 else {
 }
 ```
 
-Finalize an order, once all the authorizations/challenges are valid:
+Once all the authorizations/challenges are valid, we can finalize the Order by sending the CSR in PEM format:
 ```swift
-let finalizedOrder = try await acme.orders.finalize(order: order, withCsr: "...")
+let finalizedOrder = try await acme.orders.finalize(order: order, withPemCsr: "...")
 ```
+Note: AcmeSwift currently doesn't implement any way of generating CSRs or private keys.
 
 
 ### Certificates

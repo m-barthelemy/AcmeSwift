@@ -75,7 +75,7 @@ extension AcmeSwift {
         ///   - withCsr: The CSR (Certificate Signing Request) **in PEM format**.
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  the `Account`.
-        public func finalize(order: AcmeOrderInfo, withCsr: String) async throws -> AcmeOrderInfo {
+        public func finalize(order: AcmeOrderInfo, withPemCsr: String) async throws -> AcmeOrderInfo {
             guard let login = self.client.login else {
                 throw AcmeError.mustBeAuthenticated("\(AcmeSwift.self).init() must be called with an \(AccountCredentials.self)")
             }
@@ -85,7 +85,9 @@ extension AcmeSwift {
                 client.accountURL = info.url
             }
             
-            let ep = FinalizeOrderEndpoint(orderURL: order.finalize, spec: .init(csr: withCsr.pemToBase64Url()))
+            let csrBytes = withPemCsr.pemToData()
+            let pemStr = csrBytes.toBase64UrlString()
+            let ep = FinalizeOrderEndpoint(orderURL: order.finalize, spec: .init(csr: pemStr))
             
             let (info, _) = try await self.client.run(ep, privateKey: login.key, accountURL: client.accountURL!)
             return info

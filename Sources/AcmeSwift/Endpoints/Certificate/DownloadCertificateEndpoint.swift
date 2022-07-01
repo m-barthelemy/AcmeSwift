@@ -2,14 +2,13 @@ import Foundation
 import NIOHTTP1
 
 struct DownloadCertificateEndpoint: EndpointProtocol {
-    var body: Body?
+    var body: Body? = ""
     
     typealias Response = String
-    typealias Body = NoBody
+    typealias Body = String
     let url: URL
     
     init(certURL: URL) {
-        self.body = NoBody()
         self.url = certURL
     }
 }

@@ -27,6 +27,9 @@ extension HTTPClientResponse {
         guard let data = body.readData(length: body.readableBytes) else {
             throw AcmeError.dataCorrupted("Unable to read Data from response body buffer")
         }
+        if T.self == String.self {
+            return String(data: data, encoding: .utf8) as! T
+        }
         return try decoder.decode(type, from: Data(data))
     }
     

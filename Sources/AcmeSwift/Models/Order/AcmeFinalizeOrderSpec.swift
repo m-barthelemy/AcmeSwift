@@ -1,7 +1,7 @@
 import Foundation
 
 struct AcmeFinalizeOrderSpec: Codable {
-    public init(csr: String) {
+    init(csr: String) {
         self.csr = csr
     }
     
