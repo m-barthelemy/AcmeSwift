@@ -136,6 +136,7 @@ extension AcmeSwift {
         ///   - preferring: Your preferred challenge validation method. Note: when requesting a wildcard certificate, a challenge will have to be published over DNS regardless of your preferred method..
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  a list of `AcmeAuthorization` containing the challenges that could **not** be validated.
+        @discardableResult
         public func validateChallenges(from order: AcmeOrderInfo, preferring: AcmeAuthorization.Challenge.ChallengeType) async throws -> [AcmeAuthorization.Challenge] {
             // get pending challenges
             let pendingChallenges = try await describePendingChallenges(from: order, preferring: preferring)

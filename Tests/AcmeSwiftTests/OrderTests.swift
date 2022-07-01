@@ -13,7 +13,7 @@ final class OrderTests: XCTestCase {
         self.logger = Logger.init(label: "acme-swift-tests")
         self.logger.logLevel = .trace
         
-        var config = HTTPClient.Configuration(certificateVerification: .fullVerification, backgroundActivityLogger: self.logger)
+        let config = HTTPClient.Configuration(certificateVerification: .fullVerification, backgroundActivityLogger: self.logger)
         self.http = HTTPClient(
             eventLoopGroupProvider: .createNew,
             configuration: config
@@ -21,31 +21,66 @@ final class OrderTests: XCTestCase {
     }
     
     func testCreateOrder() async throws {
-        let acme = try await AcmeSwift(client: self.http, /*acmeEndpoint: AcmeServer.letsEncryptStaging,*/ logger: logger)
+        let acme = try await AcmeSwift(client: self.http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
         defer {try? acme.syncShutdown()}
         do {
             let account = try await acme.account.create(contacts: ["bonsouere3456@gmail.com", "bonsouere+299@gmail.com"], acceptTOS: true)
             try acme.account.use(account)
             
-            let order = try await acme.orders.create(domains: ["www.nuw.run"])
+            let order = try await acme.orders.create(domains: ["www.burrito.run"])
             //print("\n••• Order: \(order)")
             XCTAssert(order.status == .pending, "Ensure order is pending")
             XCTAssert(order.expires > Date(), "Ensure order expiry is parsed")
             XCTAssert(order.identifiers.count == 2, "Ensure identifiers match number of requested domains")
             
             let authorizations = try await acme.orders.getAuthorizations(from: order)
+            XCTAssert(authorizations.count == 1, "Ensure we only have 1 authorization")
             
             let challengeDescriptions = try await acme.orders.describePendingChallenges(from: order, preferring: .dns)
-            for desc in challengeDescriptions {
-                if desc.type == .http {
-                    print("\n • The URL \(desc.endpoint) needs to return \(desc.value)")
-                }
-                else if desc.type == .dns {
-                    print("\n • Create the following DNS record: \(desc.endpoint) TXT \(desc.value)")
-                }
+            XCTAssert(challengeDescriptions.count == 1, "Ensure we have 1 pending challenge")
+
+        }
+        catch(let error) {
+            print("\n•••• BOOM! \(error)")
+            throw error
+        }
+    }
+    
+    func wrapItUpLikeABurrito() async throws {
+        let privateKeyPem = """
+            -----BEGIN PRIVATE KEY-----
+            MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQglxrdsu3lP83xzUej
+            ytJ7zvy2uuW3Qt7SWGRiGx8dJJuhRANCAARcpivMPbQWA/T2h8YNQPgOF+8jhyaY
+            iO6kepubzBqqgk/iub3w+ZBDfKi6RgGYX2yVRlHMS4ZhhSoFFLoP57eI
+            -----END PRIVATE KEY-----
+            """
+        let contacts = ["mailto:bonsouere3456@gmail.com"]
+        
+        let login = try AccountCredentials(contacts: contacts, pemKey: privateKeyPem)
+        let acme = try await AcmeSwift(client: self.http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
+        defer {try? acme.syncShutdown()}
+        
+        try acme.account.use(login)
+        
+        let order = try await acme.orders.create(domains: ["www.new.run"])
+        
+        for desc in try await acme.orders.describePendingChallenges(from: order, preferring: .dns) {
+            if desc.type == .http {
+                print("\n • The URL \(desc.endpoint) needs to return \(desc.value)")
             }
-            
-            let csr = """
+            else if desc.type == .dns {
+                print("\n • Create the following DNS record: \(desc.endpoint) TXT \(desc.value)")
+            }
+        }
+        print("\nCREATE DNS CHALLENGES!!")
+        try await Task.sleep(nanoseconds: 60_000_000_000)
+        
+        try await acme.orders.validateChallenges(from: order, preferring: .dns)
+        let failedAuthorizations = try await acme.orders.wait(for: order, timeout: 60 /* in seconds*/)
+        guard failedAuthorizations.count == 0 else {
+            fatalError("\n#### Some challenges were not validated! \(failedAuthorizations)")
+        }
+        let csr = """
             -----BEGIN CERTIFICATE REQUEST-----
             MIIChDCCAWwCAQAwFjEUMBIGA1UEAwwLd3d3Lm51dy5ydW4wggEiMA0GCSqGSIb3
             DQEBAQUAA4IBDwAwggEKAoIBAQCkoaTT+aCYjT/W2EBXCim1lFi3Z2c4TlHSklYb
@@ -63,31 +98,10 @@ final class OrderTests: XCTestCase {
             bfeJ5vJwRwCtoKnBTDRFE8xJWl/WcprJ
             -----END CERTIFICATE REQUEST-----
             """
-            print("\n•••• CSR to base64UERL: '\(csr.pemToBase64Url())'")
-            print("\nCREATE DNS CHALLENGES!!")
-            try await Task.sleep(nanoseconds: 60_000_000_000)
+        let finalized = try await acme.orders.finalize(order: order, withPemCsr: csr)
+        let certs = try await acme.certificates.download(for: finalized)
+        try certs.joined(separator: "\n").write(to: URL(fileURLWithPath: "cert.pem"), atomically: true, encoding: .utf8)
 
-            try await acme.orders.validateChallenges(from: order, preferring: .dns)
-            let failedAuthorizations = try await acme.orders.wait(for: order, timeout: 60 /* in seconds*/)
-            guard failedAuthorizations.count == 0 else {
-                fatalError("\n#### Some challenges were not validated! \(failedAuthorizations)")
-            }
-            let finalized = try await acme.orders.finalize(order: order, withPemCsr: csr)
-            let certs = try await acme.certificates.download(for: finalized)
-            for var cert in certs {
-                print("\n • cert: '\(cert)'")
-            }
-
-            try certs.joined(separator: "\n").write(to: URL(fileURLWithPath: "cert.pem"), atomically: true, encoding: .utf8)
-        }
-        catch(let error) {
-            print("\n•••• BOOM! \(error)")
-            throw error
-        }
-    }
-    
-    func wrapItUpLikeABurrito() async throws {
-        
     }
     
     private func toJson<T: Encodable>(_ value: T) -> String {
