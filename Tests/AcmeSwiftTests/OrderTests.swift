@@ -34,6 +34,7 @@ final class OrderTests: XCTestCase {
             XCTAssert(order.identifiers.count == 2, "Ensure identifiers match number of requested domains")
             
             let authorizations = try await acme.orders.getAuthorizations(from: order)
+            
             let challengeDescriptions = try await acme.orders.describePendingChallenges(from: order, preferring: .dns)
             for desc in challengeDescriptions {
                 if desc.type == .http {
@@ -85,7 +86,7 @@ final class OrderTests: XCTestCase {
         }
     }
     
-    func wrapItUp() async throws {
+    func wrapItUpLikeABurrito() async throws {
         
     }
     

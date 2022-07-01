@@ -39,7 +39,7 @@ public struct AcmeOrderInfo: Codable {
         /// Submit a finalization request.
         case ready
         
-        /// The certificate is being issued.
+        /// The certificate is being issued (`finalize()` has been called).
         /// Send a POST-as-GET request after the time given in the Retry-After header field of the response, if any.
         case processing
         

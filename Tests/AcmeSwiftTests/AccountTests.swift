@@ -23,17 +23,10 @@ final class AccountTests: XCTestCase {
     func testCreateAndDeactivateAccount() async throws {
         let acme = try await AcmeSwift(client: self.http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
         defer {try? acme.syncShutdown()}
-        do {
-            let account = try await acme.account.create(contacts: ["bonsouere3456@gmail.com", "bonsouere+299@gmail.com"], acceptTOS: true)
-            //print("\n•••• Response = \(newAccount)")
-            try acme.account.use(account)
-                        
-            try await acme.account.deactivate()
-        }
-        catch(let error) {
-            print("\n•••• BOOM! \(error)")
-            throw error
-        }
+        
+        let account = try await acme.account.create(contacts: ["bonsouere3456@gmail.com", "bonsouere+299@gmail.com"], acceptTOS: true)
+        try acme.account.use(account)
+        try await acme.account.deactivate()
     }
     
     func testGetAccount() async throws {
@@ -55,7 +48,6 @@ final class AccountTests: XCTestCase {
         let account = try await acme.account.get()
         XCTAssert(account.privateKeyPem != "", "Ensure private key is set")
         XCTAssert(account.contact == contacts, "Ensure Account contacts are set")
-        //print("\n•••• Response = \(account)")
     }
     
     func testGetNonce() async throws {

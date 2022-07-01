@@ -169,3 +169,48 @@ try certs.joined(separator: "\n")
 try await acme.certificates.revoke(certificatePem: "....")
 ```
 
+
+## Example
+
+Let's suppose that we own the `ponies.com` domain and that we want a wildcard certificate for it.
+We also assume that we have an existing Let's Encrypt account.
+
+```swift
+
+// Create the client and load Let's Encrypt credentials
+let acme = try await AcmeSwift()
+let accountKey = try String(contentsOf: URL(fileURLWithPath: "letsEncryptAccountKey.pem"), encoding: .utf8)
+let credentials = try AccountCredentials(contacts: ["email@domain.tld"], pemKey: accountKey)
+try acme.account.use(credentials)
+
+// Create a certificate order for *.ponies.com
+let order = try await acme.orders.create(domains: ["mydomain.com", "www.mydomain.com"])
+
+// ... after that, now we can fetch the challenges we need to complete
+let descriptions = try await acme.orders.describePendingChallenges(from: order, preferring: .dns)
+for desc in challengeDescriptions {
+    if desc.type == .http {
+        print("\n • The URL \(desc.endpoint) needs to return \(desc.value)")
+    }
+    else if desc.type == .dns {
+        print("\n • Create the following DNS record: \(desc.endpoint) TXT \(desc.value)")
+    }
+}
+ 
+// At this point, we could programmatically create the challenge DNS records using our DNS provider's API
+[.... publish the DNS challenge records ....]
+
+
+// Assuming the challenges have been published, we can now ask Let's Encrypt to validate them
+try await acme.orders.validateChallenges(from: order, preferring: .dns)
+
+// If the validation didn't throw any error, we can now send our Certificate Signing Request...
+let finalized = try await acme.orders.finalize(order: order, withPemCsr: csr)
+
+// ... and the certificate is ready to download!
+let certs = try await acme.certificates.download(for: finalized)
+
+// Let's save the full certificates chain to a file 
+try certs.joined(separator: "\n").write(to: URL(fileURLWithPath: "cert.pem"), atomically: true, encoding: .utf8)
+``` 
+

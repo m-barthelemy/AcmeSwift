@@ -7,17 +7,27 @@ public struct AcmeAuthorization: Codable {
     public let expires: Date?
     
     public let identifier: AcmeOrderSpec.Identifier
+    
     public let challenges: [Challenge]
     
     /// Present and `true` if the current authorization is for a domain for which a wildcard certificate was requested.
     public let wildcard: Bool?
     
     public enum AuthorizationStatus: String, Codable {
+        /// Initial status when the authorization is created.
         case pending
+        
+        /// A challenge listed in the authorization was validated successfully.
         case valid
+        
         case invalid
+        
+        /// Deactivated by the client.
         case deactivated
+        
         case expired
+        
+        /// Revoked by the ACMEv2 server.
         case revoked
     }
     

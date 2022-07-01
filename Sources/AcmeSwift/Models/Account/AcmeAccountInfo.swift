@@ -30,6 +30,6 @@ public struct AcmeAccountInfo: Codable {
     public let orders: URL?
     
     public enum Status: String, Codable {
-        case valid, deactivated
+        case valid, deactivated, revoked
     }
 }
