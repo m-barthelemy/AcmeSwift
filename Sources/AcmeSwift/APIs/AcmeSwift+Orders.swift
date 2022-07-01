@@ -28,6 +28,20 @@ extension AcmeSwift {
             return orders
         }
         
+        /// Fetches the latest status of an existing Order
+        /// - Parameters:
+        ///   - order: an existing Order object..
+        public func get(order: AcmeOrderInfo) async throws -> AcmeOrderInfo {
+            
+        }
+        
+        /// Fetches the latest status of an existing Order
+        /// - Parameters:
+        ///   - url: The URL of the ORder.
+        public func get(url: URL) async throws -> AcmeOrderInfo {
+        }
+        
+        
         /// Creates an Order for obtaining a new certificate.
         /// - Parameters:
         ///   - domains: The domains for which we want to create a certificate. Example: `["*.mydomain.com", "mydomain.com"]`

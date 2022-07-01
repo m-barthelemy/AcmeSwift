@@ -184,7 +184,7 @@ let credentials = try AccountCredentials(contacts: ["email@domain.tld"], pemKey:
 try acme.account.use(credentials)
 
 // Create a certificate order for *.ponies.com
-let order = try await acme.orders.create(domains: ["mydomain.com", "www.mydomain.com"])
+let order = try await acme.orders.create(domains: ["ponies.com", "www.ponies.com"])
 
 // ... after that, now we can fetch the challenges we need to complete
 for desc in try await acme.orders.describePendingChallenges(from: order, preferring: .dns) {
