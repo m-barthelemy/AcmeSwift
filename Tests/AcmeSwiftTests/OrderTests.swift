@@ -85,6 +85,10 @@ final class OrderTests: XCTestCase {
         }
     }
     
+    func wrapItUp() async throws {
+        
+    }
+    
     private func toJson<T: Encodable>(_ value: T) -> String {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
