@@ -166,6 +166,6 @@ try certs.joined(separator: "\n")
 
 - Revoke a certificate:
 ```swift
-try await acme.certificates.revoke(certificatePEM: "....")
+try await acme.certificates.revoke(certificatePem: "....")
 ```
 

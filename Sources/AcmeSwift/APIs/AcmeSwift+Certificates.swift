@@ -35,7 +35,9 @@ extension AcmeSwift {
         }
         
         /// Revokes a previously issued certificate.
-        public func revoke(certificatePEM: String, reason: AcmeRevokeReason? = nil) async throws {
+        /// - Parameters:
+        ///   - certificatePem: The Certificate **in PEM format**.
+        public func revoke(certificatePem: String, reason: AcmeRevokeReason? = nil) async throws {
             try await self.client.ensureLogged()
             
             let csrBytes = certificatePEM.pemToData()
