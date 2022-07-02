@@ -2,7 +2,7 @@ import XCTest
 import AsyncHTTPClient
 import NIO
 import Logging
-import Shield
+//import Shield
 
 @testable import AcmeSwift
 
@@ -62,7 +62,7 @@ final class OrderTests: XCTestCase {
         }
     }
     
-    func testWrapItUpLikeABurrito() async throws {
+    /*func testWrapItUpLikeABurrito() async throws {
         let privateKeyPem = """
             -----BEGIN PRIVATE KEY-----
             MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQglxrdsu3lP83xzUej
@@ -146,7 +146,8 @@ final class OrderTests: XCTestCase {
         """
         print("\n => Private key='\(privateKeyPem)'")
         print("\n => CSR='\(csr.base64EncodedString())'")
-    }
+    }*/
+    
     private func toJson<T: Encodable>(_ value: T) -> String {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
