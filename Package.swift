@@ -19,7 +19,7 @@ let package = Package(
         // x509
         .package(url: "https://github.com/outfoxx/PotentCodables.git", from: "2.2.0"),
         // For tests
-        .package(url: "https://github.com/outfoxx/Shield.git", from: "2.1.3")
+        //.package(url: "https://github.com/outfoxx/Shield.git", from: "2.1.3")
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -37,7 +37,7 @@ let package = Package(
             name: "AcmeSwiftTests",
             dependencies: [
                 "AcmeSwift",
-                "Shield",
+                //"Shield",
             ]
         ),
     ]

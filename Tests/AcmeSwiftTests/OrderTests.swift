@@ -2,7 +2,7 @@ import XCTest
 import AsyncHTTPClient
 import NIO
 import Logging
-import Shield
+//import Shield
 
 @testable import AcmeSwift
 
