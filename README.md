@@ -204,8 +204,9 @@ We also assume that we have an existing Let's Encrypt account.
 
 ```swift
 import AcmeSwift
-// Native Swift security library at https://github.com/outfoxx/Shield
+// Swift security library at https://github.com/outfoxx/Shield
 // We use it to generate our private key and CSR
+// Unfortunately this library is not available on Linux.
 import Shield
 
 // Create the client and load Let's Encrypt credentials

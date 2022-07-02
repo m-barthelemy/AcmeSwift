@@ -61,7 +61,6 @@ struct AcmeRequestBody<T: EndpointProtocol>: Encodable {
     
     init(accountURL: URL? = nil, privateKey: Crypto.P256.Signing.PrivateKey, nonce: String, payload: T) throws {
         self.privateKey = privateKey
-        
         let pubKey = try JWTKit.ECDSAKey.public(pem: privateKey.publicKey.pemRepresentation)
         guard let parameters = pubKey.parameters else {
             throw AcmeError.invalidKeyError("Public key parameters are nil")

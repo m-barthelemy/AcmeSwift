@@ -16,6 +16,8 @@ let package = Package(
         .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.10.0"),
         .package(url: "https://github.com/apple/swift-crypto.git", from: "2.1.0"),
         .package(url: "https://github.com/vapor/jwt-kit.git", .branch("main")),
+        // x509
+        .package(url: "https://github.com/outfoxx/PotentCodables.git", from: "2.2.0"),
         // For tests
         .package(url: "https://github.com/outfoxx/Shield.git", from: "2.1.3")
     ],
@@ -27,7 +29,9 @@ let package = Package(
             dependencies: [
                 .product(name: "AsyncHTTPClient", package: "async-http-client"),
                 .product(name: "Crypto", package: "swift-crypto"),
+                .product(name: "_CryptoExtras", package: "swift-crypto"),
                 .product(name: "JWTKit", package: "jwt-kit"),
+                "PotentCodables"
             ]),
         .testTarget(
             name: "AcmeSwiftTests",
