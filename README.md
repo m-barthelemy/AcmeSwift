@@ -203,6 +203,10 @@ Let's suppose that we own the `ponies.com` domain and that we want a wildcard ce
 We also assume that we have an existing Let's Encrypt account.
 
 ```swift
+import AcmeSwift
+// Native Swift security library at https://github.com/outfoxx/Shield
+// We use it to generate our private key and CSR
+import Shield
 
 // Create the client and load Let's Encrypt credentials
 let acme = try await AcmeSwift()
@@ -229,9 +233,23 @@ for desc in try await acme.orders.describePendingChallenges(from: order, preferr
 
 // Assuming the challenges have been published, we can now ask Let's Encrypt to validate them.
 // If some challenges fail to validate, it is safe to call validateChallenges() again after fixing the underlying issue.
-try await acme.orders.validateChallenges(from: order, preferring: .dns)
+let failed = try await acme.orders.validateChallenges(from: order, preferring: .dns)
+guard failed.count == 0 else {
+    fatalError("Some validations failed! \(failed)")
+}
 
 // If the validation didn't throw any error, we can now send our Certificate Signing Request...
+// Here we use the great "Shield" library to generate our private key and CSR
+let keyPair = try SecKeyPair.Builder(type: .rsa, keySize: 2048).generate(label: "Ponies")
+let csr = try CertificationRequest.Builder()
+    .subject(name: NameBuilder().add("ponies.com", forTypeName: "CN").name)
+    .addAlternativeNames(names: .dnsName("ponies.com"))
+    .addAlternativeNames(names: .dnsName("www.ponies.com"))
+    .publicKey(keyPair: keyPair, usage: [.keyCertSign, .cRLSign])
+    .build(signingKey: keyPair.privateKey, digestAlgorithm: .sha256)
+    .encoded()
+    .base64EncodedString()
+                
 let finalized = try await acme.orders.finalize(order: order, withPemCsr: csr)
 
 // ... and the certificate is ready to download!
@@ -239,5 +257,14 @@ let certs = try await acme.certificates.download(for: finalized)
 
 // Let's save the full certificates chain to a file 
 try certs.joined(separator: "\n").write(to: URL(fileURLWithPath: "cert.pem"), atomically: true, encoding: .utf8)
+
+// Now we also need to export the private key, encoded as PEM
+let privateKeyData = try keyPair.privateKey.encode().base64EncodedString(options: .lineLength64Characters)
+let privateKeyPem = """
+-----BEGIN PRIVATE KEY-----
+\(privateKeyData)
+-----END PRIVATE KEY----
+"""
+try privateKeyPem.write(to: URL(fileURLWithPath: "key.pem"), atomically: true, encoding: .utf8)
 ``` 
 
