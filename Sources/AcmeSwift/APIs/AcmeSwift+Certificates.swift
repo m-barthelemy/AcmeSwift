@@ -8,8 +8,15 @@ extension AcmeSwift {
     }
     
     public struct CertificatesAPI {
-        private let separator = "-----END CERTIFICATE-----\n"
         fileprivate var client: AcmeSwift
+        
+        /// Creates a basic CSR suitable for Let'sEncrypt
+        /*public func createCSR(type: CsrType = .ecdsa, cn: String? = nil, domains: [String]) throws -> CSR {
+            switch type {
+                case .ecdsa:
+                    return CSR.init(key: <#T##P256.Signing.PrivateKey#>, subject: <#T##X509Subject?#>, domains: <#T##[String]#>)
+            }
+        }*/
         
         /// Downloads the certificate chain for a finalized Order.
         /// The certificates are returned a a list of PEM strings.
@@ -22,11 +29,11 @@ extension AcmeSwift {
                 throw AcmeError.certificateNotReady(order.status, "Order must have a `valid` status. Some challenges might not have been completed yet")
             }
 
-            
+            let separator = "-----END CERTIFICATE-----\n"
             let ep = DownloadCertificateEndpoint(certURL: certURL)
             let (certificateChain, _) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
             var certificates: [String] = []
-            for certificate in  certificateChain.components(separatedBy: self.separator) {
+            for certificate in  certificateChain.components(separatedBy: separator) {
                 if certificate != "" {
                     certificates.append("\(certificate)\(separator)".trimmingCharacters(in: .newlines))
                 }

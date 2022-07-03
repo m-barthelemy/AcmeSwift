@@ -5,7 +5,7 @@ struct X509Kind {
     static func schema(_ valueKind: Schema = .string(kind: .ia5, size: .range(1, 64))) -> Schema {
         .sequence([
             "oid": .objectIdentifier(),
-            "kind": valueKind
+            "value": valueKind
         ])
     }
 }

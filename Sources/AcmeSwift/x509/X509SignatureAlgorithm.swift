@@ -1,16 +1,15 @@
 import Foundation
 import PotentASN1
 
-public struct X509SignatureAlgorithm : Codable {
-    public static var sha256WithRSAEncryption: OID {
-        return [1,2,840,113549,1,1,11]
+public struct X509SignatureAlgorithm: HasSchemaProtocol {
+    var oid: OID
+    
+    public init(_ kind: X509SignatureAlgorithmOID) {
+        self.oid = .init(kind.value)
     }
     
-    public static var ecdsaWithSHA256: OID {
-        return [1,2,840,10045,4,3,2]
+    static var schema: Schema {
+        .sequence(["oid": .objectIdentifier()])
     }
     
-    public static var ecdsaWithSHA512: OID {
-        return [1,2,840,10045,4,3,4]
-    }
 }
