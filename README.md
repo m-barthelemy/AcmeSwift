@@ -269,3 +269,7 @@ let privateKeyPem = """
 try privateKeyPem.write(to: URL(fileURLWithPath: "key.pem"), atomically: true, encoding: .utf8)
 ``` 
 
+
+
+## Credits
+Part of the CSR feature is inspired by and/or taken from the excellent Shield project (https://github.com/outfoxx/Shield)

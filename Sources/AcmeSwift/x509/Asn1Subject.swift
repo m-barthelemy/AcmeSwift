@@ -2,24 +2,7 @@ import Foundation
 import PotentASN1
 
 struct Asn1Subject: HasSchemaProtocol {
-    /*var countryName: X509Item<String>?
-     var stateOrProvinceName: X509Item<String>?
-     var localityName: X509Item<String>?
-     var organizationName: X509Item<String>?
-     var organizationalUnitName: X509Item<String>?
-     var commonName: X509Item<String>?
-     var emailAddress: X509Item<String>?*/
     var values: [X509Item<String>] = []
-    
-    /*init(subject: X509Subject) {
-     self.countryName =              .init(oid: [2,5,4,6], value: subject.countryName)
-     self.stateOrProvinceName =      .init(oid: [2,5,4,8], value: subject.stateOrProvinceName)
-     self.localityName =             .init(oid: [2,5,4,7], value: subject.localityName)
-     self.organizationName =         .init(oid: [2,5,4,10], value: subject.organizationName)
-     self.organizationalUnitName =   .init(oid: [2,5,4,11], value: subject.organizationalUnitName)
-     self.commonName =               .init(oid: [2,5,4,3], value: subject.commonName)
-     self.emailAddress =             .init(oid: [1,2,840,113549,1,9,1], value: subject.emailAddress)
-     }*/
     
     init(subject: X509Subject) {
         if let c = subject.countryName {

@@ -5,14 +5,12 @@ public enum X509SignatureAlgorithmOID {
     case sha256WithRSAEncryption
     case ecdsaWithSHA256
     case ecdsaWithSHA512
-    //case idEcPublicKey
-    
+
     var value: [UInt64] {
         switch self {
-            case .sha256WithRSAEncryption: return [1,2,840,113549,1,1,11]
-            case .ecdsaWithSHA256: return [1,2,840,10045,4,3,2]
-            case .ecdsaWithSHA512: return [1,2,840,10045,4,3,4]
-            //case .idEcPublicKey: return OID([1.2.840,10045,2.1])
+            case .sha256WithRSAEncryption:  return [1,2,840,113549,1,1,11]
+            case .ecdsaWithSHA256:          return [1,2,840,10045,4,3,2]
+            case .ecdsaWithSHA512:          return [1,2,840,10045,4,3,4]
         }
     }
 }
@@ -26,11 +24,11 @@ enum X509PublicKeyAlgorithmOID {
     
     var value: OID {
         switch self {
-            case .rsaEncryption: return OID([1,2,840,113549,1,1,1])
-            case .sha256WithRSAEncryption: return OID([1,2,840,113549,1,1,11])
-            case .sha512WithRSAEncryption: return OID([1,2,840,113549,1,1,13])
-            case .idEcDH: return OID([1,3,132,1,12])
-            case .idEcPublicKey: return OID([1,2,840,10045,2,1])
+            case .rsaEncryption:            return [1,2,840,113549,1,1,1]
+            case .sha256WithRSAEncryption:  return [1,2,840,113549,1,1,11]
+            case .sha512WithRSAEncryption:  return [1,2,840,113549,1,1,13]
+            case .idEcDH:                   return [1,3,132,1,12]
+            case .idEcPublicKey:            return [1,2,840,10045,2,1]
         }
     }
 }
@@ -40,38 +38,95 @@ enum ECCurve {
     
     var value: OID {
         switch self {
-            case .prime256v1: return OID([1,2,840,10045,3,1,7])
+            case .prime256v1: return [1,2,840,10045,3,1,7]
         }
     }
 }
-struct CsrExtensionsOID {
-    static var basicConstraints: OID { [2,5,29,19] }
+
+enum CsrExtension {
+    case extensionRequest
     
-    static var keyUsage: OID { [2,5,29,15] }
-    
-    static var extendedKeyUsage: OID { [1,3,6,1,5,5,7,3] }
-                                        
-    static var subjectAltName: OID { [2,5,29,17] }
+    var value: OID {
+        switch self {
+            case .extensionRequest: return [1,2,840,113549,1,9,14]
+        }
+    }
 }
 
-struct KeyUsageOID {
-    static var digitalSignature: OID { [2,5,29,15,0] }
-    static var nonRepudiation: OID { [2,5,29,15,1] }
-    static var keyEncipherment: OID { [2,5,29,15,2] }
-    static var dataEncipherment: OID { [2,5,29,15,3] }
-    static var keyAgreement: OID { [2,5,29,15,4] }
-    static var keyCertSign: OID { [2,5,29,15,5] }
-    static var cRLSign: OID { [2,5,29,15,6] }
+enum CsrExtensionsOID {
+    case basicConstraints
+    case keyUsage
+    case extendedKeyUsage
+    case subjectAltName
+    
+    var value: OID {
+        switch self {
+            case .basicConstraints: return [2,5,29,19]
+            case .keyUsage:         return [2,5,29,15]
+            case .extendedKeyUsage: return [1,3,6,1,5,5,7,3]
+            case .subjectAltName:   return [2,5,29,17]
+        }
+    }
 }
 
-struct ExtendedKeyUsageOID {
+enum KeyUsageOID {
+    case digitalSignature
+    case nonRepudiation
+    case keyEncipherment
+    case dataEncipherment
+    case keyAgreement
+    case keyCertSign
+    case cRLSign
+    
+    var value: OID {
+        switch self {
+            case .digitalSignature: return [2,5,29,15,0]
+            case .nonRepudiation:   return [2,5,29,15,1]
+            case .keyEncipherment:  return [2,5,29,15,2]
+            case .dataEncipherment: return [2,5,29,15,3]
+            case .keyAgreement:     return [2,5,29,15,4]
+            case .keyCertSign:      return [2,5,29,15,5]
+            case .cRLSign:          return [2,5,29,15,6]
+                
+        }
+    }
+}
+
+enum ExtendedKeyUsageOID {
     /// The most common type. A certificate for a server (web...)
-    static var serverAuth: OID { [1,3,6,1,5,5,7,3,1] }
-    
+    case serverAuth
     /// A certificate for client authentication (mutual TLS)
-    static var clientAuth: OID { [1,3,6,1,5,5,7,3,2] }
+    case clientAuth
     
-    static var codeSigning: OID { [1,3,6,1,5,5,7,3,3] }
+    case codesigning
     
-    static var ocspSigning: OID { [1,3,6,1,5,5,7,3,9] }
+    case ocspSigning
+    
+    var value: OID {
+        switch self {
+            case .serverAuth:   return [1,3,6,1,5,5,7,3,1]
+            case .clientAuth:   return [1,3,6,1,5,5,7,3,2]
+            case .codesigning:  return [1,3,6,1,5,5,7,3,3]
+            case .ocspSigning:  return [1,3,6,1,5,5,7,3,9]
+        }
+    }
+}
+
+enum GeneralNameOID {
+    /// Email address
+    case rfc822Name
+    
+    /// DNS name
+    case dNSName
+    
+    // URI
+    case uniformResourceIdentifier
+    
+    var value: OID {
+        switch self {
+            case .rfc822Name:                   return [2,5,29,17,1]
+            case .dNSName:                      return [2,5,29,17,2]
+            case .uniformResourceIdentifier:    return [2,5,29,17,6]
+        }
+    }
 }
