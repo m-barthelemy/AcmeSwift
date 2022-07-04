@@ -262,7 +262,6 @@ let certs = try await acme.certificates.download(for: finalized)
 try certs.joined(separator: "\n").write(to: URL(fileURLWithPath: "cert.pem"), atomically: true, encoding: .utf8)
 
 // Now we also need to export the private key, encoded as PEM
-"""
 try csr.privateKeyPem.write(to: URL(fileURLWithPath: "key.pem"), atomically: true, encoding: .utf8)
 ``` 
 
