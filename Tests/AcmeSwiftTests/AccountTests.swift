@@ -21,7 +21,7 @@ final class AccountTests: XCTestCase {
     }
     
     func testCreateAndDeactivateAccount() async throws {
-        let acme = try await AcmeSwift(client: self.http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
+        let acme = try await AcmeSwift(client: self.http, acmeEndpoint: .letsEncryptStaging, logger: logger)
         defer {try? acme.syncShutdown()}
         
         let account = try await acme.account.create(contacts: ["bonsouere3456@gmail.com", "bonsouere+299@gmail.com"], acceptTOS: true)
@@ -41,7 +41,7 @@ final class AccountTests: XCTestCase {
         let contacts = ["mailto:bonsouere3456@gmail.com"]
         
         let login = try AccountCredentials(contacts: contacts, pemKey: privateKeyPem)
-        let acme = try await AcmeSwift(client: self.http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
+        let acme = try await AcmeSwift(client: self.http, acmeEndpoint: .letsEncryptStaging, logger: logger)
         defer {try? acme.syncShutdown()}
         
         try acme.account.use(login)
@@ -51,7 +51,7 @@ final class AccountTests: XCTestCase {
     }
     
     func testGetNonce() async throws {
-        let acme = try await AcmeSwift(client: self.http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
+        let acme = try await AcmeSwift(client: self.http, acmeEndpoint: .letsEncryptStaging, logger: logger)
         defer {try? acme.syncShutdown()}
         let nonce = try await acme.getNonce()
         XCTAssert(nonce != "", "ensure Nonce is set")

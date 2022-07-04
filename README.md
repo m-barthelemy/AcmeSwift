@@ -47,7 +47,7 @@ When testing, preferably use the Let's Encrypt staging endpoint:
 ```swift
 import AcmeSwift
 
-let acme = try await AcmeSwift(acmeEndpoint: AcmeServer.letsEncryptStaging)
+let acme = try await AcmeSwift(acmeEndpoint: .letsEncryptStaging)
 
 ```
 
@@ -157,12 +157,28 @@ let updatedChallenges = try await acme.orders.validateChallenges(from: order, pr
 
 <br/>
 
-Once all the authorizations/challenges are valid, we can finalize the Order by sending the CSR in PEM format:
+Once all the authorizations/challenges are valid, we can finalize the Order by sending the CSR in PEM format.
+If you already have a CSR:
 ```swift
 let finalizedOrder = try await acme.orders.finalize(order: order, withPemCsr: "...")
 ```
-The CSR must contain all the DNS names requested by the Order in its SAN (subjectAltName) field.
-> Note: AcmeSwift currently doesn't implement any way of generating CSRs or private keys.
+
+
+If you want AcmeSwift to generate one for you:
+```swift
+// ECDSA key and certificate
+let csr = try AcmeX509Csr.ecdsa(domains: ["mydomain.com", "www.mydomain.com"])
+// .. or, good old RSA
+let csr = try AcmeX509Csr.rsa(domains: ["mydomain.com", "www.mydomain.com"])
+
+let finalizedOrder = try await acme.orders.finalize(order: order, withCsr: csr)
+// You can access the private key used to generate the CSR (and to use once you get the certificate)
+print("\n• Private key: \(csr.privateKeyPem)")
+```
+
+<br/>
+
+> **NOTE**: The CSR must contain all the DNS names requested by the Order in its SAN (subjectAltName) field.
 
 
 <br/>
@@ -204,10 +220,6 @@ We also assume that we have an existing Let's Encrypt account.
 
 ```swift
 import AcmeSwift
-// Swift security library at https://github.com/outfoxx/Shield
-// We use it to generate our private key and CSR
-// Unfortunately this library is not available on Linux.
-import Shield
 
 // Create the client and load Let's Encrypt credentials
 let acme = try await AcmeSwift()
@@ -239,19 +251,11 @@ guard failed.count == 0 else {
     fatalError("Some validations failed! \(failed)")
 }
 
+// Let's create a private key and CSR using the rudimentary feature provided by AcmeSwift
+let csr = try AcmeX509Csr.ecdsa(domains: ["mydomain.com", "www.mydomain.com"])
+
 // If the validation didn't throw any error, we can now send our Certificate Signing Request...
-// Here we use the great "Shield" library to generate our private key and CSR
-let keyPair = try SecKeyPair.Builder(type: .rsa, keySize: 2048).generate(label: "Ponies")
-let csr = try CertificationRequest.Builder()
-    .subject(name: NameBuilder().add("ponies.com", forTypeName: "CN").name)
-    .addAlternativeNames(names: .dnsName("ponies.com"))
-    .addAlternativeNames(names: .dnsName("www.ponies.com"))
-    .publicKey(keyPair: keyPair, usage: [.keyCertSign, .cRLSign])
-    .build(signingKey: keyPair.privateKey, digestAlgorithm: .sha256)
-    .encoded()
-    .base64EncodedString()
-                
-let finalized = try await acme.orders.finalize(order: order, withPemCsr: csr)
+let finalized = try await acme.orders.finalize(order: order, withCsr: csr)
 
 // ... and the certificate is ready to download!
 let certs = try await acme.certificates.download(for: finalized)
@@ -260,13 +264,8 @@ let certs = try await acme.certificates.download(for: finalized)
 try certs.joined(separator: "\n").write(to: URL(fileURLWithPath: "cert.pem"), atomically: true, encoding: .utf8)
 
 // Now we also need to export the private key, encoded as PEM
-let privateKeyData = try keyPair.privateKey.encode().base64EncodedString(options: .lineLength64Characters)
-let privateKeyPem = """
------BEGIN PRIVATE KEY-----
-\(privateKeyData)
------END PRIVATE KEY----
 """
-try privateKeyPem.write(to: URL(fileURLWithPath: "key.pem"), atomically: true, encoding: .utf8)
+try csr.privateKeyPem.write(to: URL(fileURLWithPath: "key.pem"), atomically: true, encoding: .utf8)
 ``` 
 
 

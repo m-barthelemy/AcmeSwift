@@ -15,10 +15,12 @@ final class MiscTempTests: XCTestCase {
         //privateKey.publicKey.
         //try rsaPrivate.signature(for: Data()).rawRepresentation
         
-        let csr = try X509Csr.ecdsa(domains: ["www.nuw.run", "nuw.run"])
+        let csr = try AcmeX509Csr.ecdsa(domains: ["www.nuw.run", "nuw.run"])
         print("\n ECDSA CSR='\(try! csr.pemEncoded())'")
-        let csr2 = try X509Csr.rsa(domains: ["www.nuw.run", "nuw.run"])
+        print("\n ECDSA private key = \(csr.privateKeyPem)")
+        let csr2 = try AcmeX509Csr.rsa(domains: ["www.nuw.run", "nuw.run"])
         print("\n RSA CSR='\(try! csr2.pemEncoded())'")
+        print("\n RSA private key = \(csr2.privateKeyPem)")
     }
     
     

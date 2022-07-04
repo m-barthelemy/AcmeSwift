@@ -24,16 +24,16 @@ public class AcmeSwift {
     private let logger: Logger
     private let decoder: JSONDecoder
     
-    public init(client: HTTPClient = .init(eventLoopGroupProvider: .createNew), acmeEndpoint: URL = AcmeServer.letsEncrypt, logger: Logger = Logger.init(label: "AcmeSwift")) async throws {
+    public init(client: HTTPClient = .init(eventLoopGroupProvider: .createNew), acmeEndpoint: AcmeEndpoint = .letsEncrypt, logger: Logger = Logger.init(label: "AcmeSwift")) async throws {
         self.client = client
-        self.server = acmeEndpoint
+        self.server = acmeEndpoint.value
         self.logger = logger
         
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         self.decoder = decoder
         
-        var request = HTTPClientRequest(url: acmeEndpoint.absoluteString)
+        var request = HTTPClientRequest(url: self.server.absoluteString)
         request.method = .GET
         self.directory = try await self.client.execute(request, deadline: .now() + TimeAmount.seconds(30), logger: self.logger)
             .decode(as: AcmeDirectory.self)
@@ -106,19 +106,19 @@ public class AcmeSwift {
     }
 }
 
-public struct AcmeServer {
+public enum AcmeEndpoint {
     /// The default, production Let's Encrypt endpoint
-    public static var letsEncrypt: URL {
-        URL(string: "https://acme-v02.api.letsencrypt.org/directory")!
-    }
-    
+    case letsEncrypt
     /// The staging Let's Encrypt endpoint, for tests. Issues certificate not recognized by clients/browsers
-    public static var letsEncryptStaging: URL {
-        URL(string: "https://acme-staging-v02.api.letsencrypt.org/directory")!
-    }
+    case letsEncryptStaging
+    /// A custom URL to a service compatible with the ACMEv2 protocol
+    case custom(URL)
     
-    /// A custom URL to a service compatible with ACMEv2 protocol
-    public static func custom(url: URL) -> URL {
-        return url
+    public var value: URL {
+        switch self {
+            case .letsEncrypt: return URL(string: "https://acme-v02.api.letsencrypt.org/directory")!
+            case .letsEncryptStaging: return URL(string: "https://acme-staging-v02.api.letsencrypt.org/directory")!
+            case .custom(let url): return url
+        }
     }
 }

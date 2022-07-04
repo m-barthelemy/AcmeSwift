@@ -2,7 +2,6 @@ import XCTest
 import AsyncHTTPClient
 import NIO
 import Logging
-//import Shield
 
 @testable import AcmeSwift
 
@@ -22,7 +21,7 @@ final class OrderTests: XCTestCase {
     }
     
     func testCreateOrder() async throws {
-        let acme = try await AcmeSwift(client: self.http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
+        let acme = try await AcmeSwift(client: self.http, acmeEndpoint: .letsEncryptStaging, logger: logger)
         defer {try? acme.syncShutdown()}
         do {
             let privateKeyPem = """
@@ -35,7 +34,7 @@ final class OrderTests: XCTestCase {
             let contacts = ["mailto:bonsouere3456@gmail.com"]
             
             let login = try AccountCredentials(contacts: contacts, pemKey: privateKeyPem)
-            let acme = try await AcmeSwift(client: self.http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
+            let acme = try await AcmeSwift(client: self.http, acmeEndpoint: .letsEncryptStaging, logger: logger)
             defer {try? acme.syncShutdown()}
             
             try acme.account.use(login)
@@ -73,7 +72,7 @@ final class OrderTests: XCTestCase {
         let contacts = ["mailto:bonsouere3456@gmail.com"]
         
         let login = try AccountCredentials(contacts: contacts, pemKey: privateKeyPem)
-        let acme = try await AcmeSwift(client: self.http, acmeEndpoint: AcmeServer.letsEncryptStaging, logger: logger)
+        let acme = try await AcmeSwift(client: self.http, acmeEndpoint: .letsEncryptStaging, logger: logger)
         defer {try? acme.syncShutdown()}
         
         try acme.account.use(login)
@@ -81,7 +80,7 @@ final class OrderTests: XCTestCase {
         
         do {
             var order = try await acme.orders.create(domains: domains)
-            
+            //try await Task.sleep(nanoseconds: 60_000_000_000)
             for desc in try await acme.orders.describePendingChallenges(from: order, preferring: .dns) {
                 if desc.type == .http {
                     print("\n • The URL \(desc.endpoint) needs to return \(desc.value)")
@@ -91,7 +90,8 @@ final class OrderTests: XCTestCase {
                 }
             }
             print("\n =====> CREATE DNS CHALLENGES!!\n")
-            try await Task.sleep(nanoseconds: 60_000_000_000)
+            
+            try await Task.sleep(nanoseconds: 6_000_000_000)
             
             let failed = try await acme.orders.validateChallenges(from: order, preferring: .dns)
             guard failed.count == 0 else {
@@ -100,52 +100,18 @@ final class OrderTests: XCTestCase {
             try await acme.orders.refresh(order: &order)
             print("\n => order: \(toJson(order))")
 
-            let keyPair = try SecKeyPair.Builder(type: .rsa, keySize: 2048).generate(label: "Test")
-            let csr = try CertificationRequest.Builder()
-                .subject(name: NameBuilder().add(domains.first!, forTypeName: "CN").name)
-                .addAlternativeNames(names: .dnsName(domains.first!))
-                .publicKey(keyPair: keyPair, usage: [.keyCertSign, .cRLSign])
-                .build(signingKey: keyPair.privateKey, digestAlgorithm: .sha256)
-                .encoded()
-                .base64EncodedString()
+            let csr = try AcmeX509Csr.ecdsa(domains: domains)
         
-            let finalized = try await acme.orders.finalize(order: order, withPemCsr: csr)
+            let finalized = try await acme.orders.finalize(order: order, withCsr: csr)
             let certs = try await acme.certificates.download(for: finalized)
             try certs.joined(separator: "\n").write(to: URL(fileURLWithPath: "cert.pem"), atomically: true, encoding: .utf8)
             
-            // Now save the private key with PEM encoding
-            let privateKeyData = try keyPair.privateKey.encode().base64EncodedString(options: .lineLength64Characters)
-            let privateKeyPem = """
-            -----BEGIN PRIVATE KEY-----
-            \(privateKeyData)
-            -----END PRIVATE KEY----
-            """
-            try privateKeyPem.write(to: URL(fileURLWithPath: "key.pem"), atomically: true, encoding: .utf8)
+            try csr.privateKeyPem.write(to: URL(fileURLWithPath: "key.pem"), atomically: true, encoding: .utf8)
         }
         catch(let error) {
             print("\n•••• BOOM! \(error)")
             throw error
         }
-    }
-    
-    func testCsr() throws {
-        let domains = ["www.new.run"]
-        let keyPair = try SecKeyPair.Builder(type: .rsa, keySize: 2048).generate(label: "Test")
-        let csr = try CertificationRequest.Builder()
-            .subject(name: NameBuilder().add(domains.first!, forTypeName: "CN").name)
-            .addAlternativeNames(names: .dnsName(domains.first!))
-            .publicKey(keyPair: keyPair, usage: [.keyCertSign, .cRLSign])
-            .build(signingKey: keyPair.privateKey, digestAlgorithm: .sha256)
-            .encoded()
-
-        let privateKeyData = try keyPair.privateKey.encode().base64EncodedString(options: .lineLength64Characters)
-        let privateKeyPem = """
-        -----BEGIN PRIVATE KEY-----
-        \(privateKeyData)
-        -----END PRIVATE KEY----
-        """
-        print("\n => Private key='\(privateKeyPem)'")
-        print("\n => CSR='\(csr.base64EncodedString())'")
     }*/
     
     private func toJson<T: Encodable>(_ value: T) -> String {

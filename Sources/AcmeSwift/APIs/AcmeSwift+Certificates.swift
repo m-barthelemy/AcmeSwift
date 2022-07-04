@@ -10,14 +10,6 @@ extension AcmeSwift {
     public struct CertificatesAPI {
         fileprivate var client: AcmeSwift
         
-        /// Creates a basic CSR suitable for Let'sEncrypt
-        /*public func createCSR(type: CsrType = .ecdsa, cn: String? = nil, domains: [String]) throws -> CSR {
-            switch type {
-                case .ecdsa:
-                    return CSR.init(key: <#T##P256.Signing.PrivateKey#>, subject: <#T##X509Subject?#>, domains: <#T##[String]#>)
-            }
-        }*/
-        
         /// Downloads the certificate chain for a finalized Order.
         /// The certificates are returned a a list of PEM strings.
         /// The first item is the final certificate for the domain.
