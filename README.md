@@ -226,7 +226,7 @@ let accountKey = try String(contentsOf: URL(fileURLWithPath: "letsEncryptAccount
 let credentials = try AccountCredentials(contacts: ["email@domain.tld"], pemKey: accountKey)
 try acme.account.use(credentials)
 
-let domains: [String] = ["ponies.com", "www.ponies.com"]
+let domains: [String] = ["*.ponies.com", "ponies.com"]
 
 // Create a certificate order for *.ponies.com
 let order = try await acme.orders.create(domains: domains)
