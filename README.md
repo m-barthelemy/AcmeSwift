@@ -156,6 +156,7 @@ let updatedChallenges = try await acme.orders.validateChallenges(from: order, pr
 <br/>
 
 Once all the authorizations/challenges are valid, we can finalize the Order by sending the CSR in PEM format.
+
 If you already have a CSR:
 ```swift
 let finalizedOrder = try await acme.orders.finalize(order: order, withPemCsr: "...")
