@@ -225,8 +225,10 @@ let accountKey = try String(contentsOf: URL(fileURLWithPath: "letsEncryptAccount
 let credentials = try AccountCredentials(contacts: ["email@domain.tld"], pemKey: accountKey)
 try acme.account.use(credentials)
 
+let domains: [String] = ["ponies.com", "www.ponies.com"]
+
 // Create a certificate order for *.ponies.com
-let order = try await acme.orders.create(domains: ["ponies.com", "www.ponies.com"])
+let order = try await acme.orders.create(domains: domains)
 
 // ... after that, now we can fetch the challenges we need to complete
 for desc in try await acme.orders.describePendingChallenges(from: order, preferring: .dns) {
@@ -250,7 +252,7 @@ guard failed.count == 0 else {
 }
 
 // Let's create a private key and CSR using the rudimentary feature provided by AcmeSwift
-let csr = try AcmeX509Csr.ecdsa(domains: ["mydomain.com", "www.mydomain.com"])
+let csr = try AcmeX509Csr.ecdsa(domains: domains)
 
 // If the validation didn't throw any error, we can now send our Certificate Signing Request...
 let finalized = try await acme.orders.finalize(order: order, withCsr: csr)
