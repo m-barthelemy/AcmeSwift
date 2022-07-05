@@ -63,7 +63,7 @@ enum CsrExtensionsOID {
         switch self {
             case .basicConstraints: return [2,5,29,19]
             case .keyUsage:         return [2,5,29,15]
-            case .extendedKeyUsage: return [1,3,6,1,5,5,7,3]
+            case .extendedKeyUsage: return [2,5,29,37]
             case .subjectAltName:   return [2,5,29,17]
         }
     }
@@ -77,6 +77,8 @@ enum KeyUsageOID {
     case keyAgreement
     case keyCertSign
     case cRLSign
+    case encipherOnly
+    case decipherOnly
     
     var value: OID {
         switch self {
@@ -87,12 +89,13 @@ enum KeyUsageOID {
             case .keyAgreement:     return [2,5,29,15,4]
             case .keyCertSign:      return [2,5,29,15,5]
             case .cRLSign:          return [2,5,29,15,6]
-                
+            case .encipherOnly:     return [2,5,29,15,7]
+            case .decipherOnly:     return [2,5,29,15,8]
         }
     }
 }
 
-enum ExtendedKeyUsageOID {
+public enum X509ExtendedKeyUsageOID: Codable {
     /// The most common type. A certificate for a server (web...)
     case serverAuth
     /// A certificate for client authentication (mutual TLS)

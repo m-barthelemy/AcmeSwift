@@ -14,11 +14,11 @@ public struct AcmeX509Csr {
     
     private var asn1Csr: Asn1CertificateSigningRequest
  
-    public static func rsa(key: _CryptoExtras._RSA.Signing.PrivateKey = try! .init(keySize: .bits2048), subject: X509Subject? = nil, domains: [String]) throws -> AcmeX509Csr {
+    public static func rsa(key: _CryptoExtras._RSA.Signing.PrivateKey = try! .init(keySize: .bits2048), subject: X509Subject? = nil, domains: [String], keyUsage: X509KeyUsage? = nil, extendedKeyUsage: [X509ExtendedKeyUsageOID]? = nil) throws -> AcmeX509Csr {
         guard domains.count > 0 else {
             throw X509Error.noDomains("At least 1 DNS name is required")
         }
-        let rsa = try RsaCSR.init(key: key, subject: subject, domains: domains)
+        let rsa = try RsaCSR.init(key: key, subject: subject, domains: domains, keyUsage: keyUsage, extendedKeyUsage: extendedKeyUsage)
         let csr = self.init(privateKey: rsa.key.derRepresentation, privateKeyPem: rsa.key.pemEncoded(), asn1Csr: rsa.asn1Csr)
         
         return csr
@@ -30,11 +30,11 @@ public struct AcmeX509Csr {
     }
     
     /// A CSR using a P256 private key
-    public static func ecdsa(key: Crypto.P256.Signing.PrivateKey = .init(), subject: X509Subject? = nil, domains: [String]) throws -> AcmeX509Csr {
+    public static func ecdsa(key: Crypto.P256.Signing.PrivateKey = .init(), subject: X509Subject? = nil, domains: [String], keyUsage: X509KeyUsage? = nil,  extendedKeyUsage: [X509ExtendedKeyUsageOID]? = nil) throws -> AcmeX509Csr {
         guard domains.count > 0 else {
             throw X509Error.noDomains("At least 1 DNS name is required")
         }
-        let ecdsa = try EcdsaCSR.init(key: key, subject: subject, domains: domains)
+        let ecdsa = try EcdsaCSR.init(key: key, subject: subject, domains: domains, keyUsage: keyUsage, extendedKeyUsage: extendedKeyUsage)
         return self.init(privateKey: ecdsa.key.derRepresentation, privateKeyPem: ecdsa.key.pemEncoded(), asn1Csr: ecdsa.asn1Csr)
     }
     
@@ -69,7 +69,7 @@ struct EcdsaCSR {
     var domains: [String]
     var asn1Csr: Asn1CertificateSigningRequest
     
-    init(key: Crypto.P256.Signing.PrivateKey = .init(), subject: X509Subject? = nil, domains: [String]) throws {
+    init(key: Crypto.P256.Signing.PrivateKey = .init(), subject: X509Subject? = nil, domains: [String], keyUsage: X509KeyUsage?, extendedKeyUsage: [X509ExtendedKeyUsageOID]?) throws {
         
         self.domains = domains
         self.subject = subject ?? .init(commonName: domains.first!)
@@ -84,7 +84,8 @@ struct EcdsaCSR {
                 ),
                 publicKey: self.key.publicKey.x963Representation
             ),
-            extensions: [.init(value: .init([.init(value: .init(dnsNames: domains))]))]
+            //extensions: [.init(value: .init([.init(value: .init(dnsNames: domains))]))]
+            extensions: [.init(value: [.init(san: .init(dnsNames: domains), keyUsage: keyUsage != nil ? .init(keyUsage!) : nil, extendedKeyUsage: extendedKeyUsage != nil ? .init(usages: extendedKeyUsage!) : nil)])]
         )
         let crInfoEncoder = ASN1Encoder(schema: Asn1CertificateRequestInfo.schema)
         let crInfoEncoded = try crInfoEncoder.encode(crInfo)
@@ -107,7 +108,7 @@ struct RsaCSR {
     var domains: [String]
     var asn1Csr: Asn1CertificateSigningRequest
 
-    init(key: _CryptoExtras._RSA.Signing.PrivateKey = try! .init(keySize: .bits2048), subject: X509Subject? = nil, domains: [String]) throws {
+    init(key: _CryptoExtras._RSA.Signing.PrivateKey = try! .init(keySize: .bits2048), subject: X509Subject? = nil, domains: [String], keyUsage: X509KeyUsage?, extendedKeyUsage: [X509ExtendedKeyUsageOID]?) throws {
         self.domains = domains
         self.subject = subject ?? .init(commonName: domains.first!)
         self.key = key
@@ -118,7 +119,9 @@ struct RsaCSR {
                 algorithm: .rsaEncryption,
                 publicKey: self.key.publicKey.derRepresentation
             ),
-            extensions: [.init(value: .init([.init(value: .init(dnsNames: domains))]))]
+            //extensions: [.init(value: .init([.init(value: .init(dnsNames: domains))]))]
+            //extensions: [.init(value: [.init(san: .init(dnsNames: domains), keyUsage: keyUsage != nil ? .init(keyUsage!) : nil )])]
+            extensions: [.init(value: [.init(san: .init(dnsNames: domains), keyUsage: keyUsage != nil ? .init(keyUsage!) : nil, extendedKeyUsage: extendedKeyUsage != nil ? .init(usages: extendedKeyUsage!) : nil)])]
         )
         let crInfoEncoder = ASN1Encoder(schema: Asn1CertificateRequestInfo.schema)
         let crInfoEncoded = try crInfoEncoder.encode(crInfo)

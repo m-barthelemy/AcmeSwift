@@ -33,7 +33,6 @@ struct Asn1CertificateRequestInfo: HasSchemaProtocol {
     struct Extensions: HasSchemaProtocol {
         private(set) var oid: OID = CsrExtension.extensionRequest.value
         var value: [ExtensionValue]
-        //var keyUsage:
         
         static var schema: Schema {
             .sequence([
@@ -42,18 +41,27 @@ struct Asn1CertificateRequestInfo: HasSchemaProtocol {
                     ExtensionValue.schema,
                     size: .is(1)
                 )
-                //"keyUsage":
             ])
         }
         
         struct ExtensionValue: HasSchemaProtocol {
-            var value: Asn1SubjectAltName
+            var san: Asn1SubjectAltName
+            var keyUsage: Asn1KeyUsage? = nil
+            var extendedKeyUsage: Asn1ExtendedKeyUsage? = nil
+            var basicConstraints: Asn1BasicConstraints? = nil
             
             static var schema: Schema {
                 .sequence([
-                    "value": Asn1SubjectAltName.schema
+                    "san": Asn1SubjectAltName.schema,
+                    "keyUsage": .optional(Asn1KeyUsage.schema),
+                    "extendedKeyUsage": .optional(Asn1ExtendedKeyUsage.schema),
+                    "basicConstraints": .optional(Asn1BasicConstraints.schema)
                 ])
             }
+            
+            /*enum CodingKeys: CodingKey {
+                case san
+            }*/
         }
         
     }
