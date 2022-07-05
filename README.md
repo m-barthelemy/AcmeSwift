@@ -1,4 +1,6 @@
 # AcmeSwift
+[![Language](https://img.shields.io/badge/Swift-5.5-brightgreen.svg)](http://swift.org)
+[![Platforms](https://img.shields.io/badge/platform-linux--64%20%7C%20osx--64-blue)]()
 
 This is a **work in progress** Let's Encrypt (ACME v2) client written in Swift. 
 
