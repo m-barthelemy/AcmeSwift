@@ -84,8 +84,11 @@ struct EcdsaCSR {
                 ),
                 publicKey: self.key.publicKey.x963Representation
             ),
-            //extensions: [.init(value: .init([.init(value: .init(dnsNames: domains))]))]
-            extensions: [.init(value: [.init(san: .init(dnsNames: domains), keyUsage: keyUsage != nil ? .init(keyUsage!) : nil, extendedKeyUsage: extendedKeyUsage != nil ? .init(usages: extendedKeyUsage!) : nil)])]
+            extensions: .init(
+                san: .init(dnsNames: domains),
+                keyUsage: keyUsage != nil ? .init(keyUsage!) : nil,
+                extendedKeyUsage: extendedKeyUsage != nil ? .init(usages: extendedKeyUsage!) : nil
+            )
         )
         let crInfoEncoder = ASN1Encoder(schema: Asn1CertificateRequestInfo.schema)
         let crInfoEncoded = try crInfoEncoder.encode(crInfo)
@@ -119,9 +122,11 @@ struct RsaCSR {
                 algorithm: .rsaEncryption,
                 publicKey: self.key.publicKey.derRepresentation
             ),
-            //extensions: [.init(value: .init([.init(value: .init(dnsNames: domains))]))]
-            //extensions: [.init(value: [.init(san: .init(dnsNames: domains), keyUsage: keyUsage != nil ? .init(keyUsage!) : nil )])]
-            extensions: [.init(value: [.init(san: .init(dnsNames: domains), keyUsage: keyUsage != nil ? .init(keyUsage!) : nil, extendedKeyUsage: extendedKeyUsage != nil ? .init(usages: extendedKeyUsage!) : nil)])]
+            extensions: .init(
+                san: .init(dnsNames: domains),
+                keyUsage: keyUsage != nil ? .init(keyUsage!) : nil,
+                extendedKeyUsage: extendedKeyUsage != nil ? .init(usages: extendedKeyUsage!) : nil
+            )
         )
         let crInfoEncoder = ASN1Encoder(schema: Asn1CertificateRequestInfo.schema)
         let crInfoEncoded = try crInfoEncoder.encode(crInfo)

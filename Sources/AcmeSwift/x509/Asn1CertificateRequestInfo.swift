@@ -12,7 +12,14 @@ import PotentASN1
     }
 }*/
 
-struct Asn1CertificateRequestInfo: HasSchemaProtocol {
+ struct Asn1CertificateRequestInfo: HasSchemaProtocol {
+    init(version: Int = 0, subject: Asn1Subject, subjectPKInfo: Asn1SubjectPublicKeyInfo, extensions: Asn1CertificateRequestInfo.Extensions) {
+        self.version = version
+        self.subject = subject
+        self.subjectPKInfo = subjectPKInfo
+        self.extensions = [extensions]
+    }
+    
     var version: Int = 0
     var subject: Asn1Subject
     var subjectPKInfo: Asn1SubjectPublicKeyInfo
@@ -33,6 +40,12 @@ struct Asn1CertificateRequestInfo: HasSchemaProtocol {
     struct Extensions: HasSchemaProtocol {
         private(set) var oid: OID = CsrExtension.extensionRequest.value
         var value: [ExtensionValue]
+        
+        init(san: Asn1SubjectAltName, keyUsage: Asn1KeyUsage? = nil, extendedKeyUsage: Asn1ExtendedKeyUsage? = nil) {
+            self.value = [
+                .init(san: san, keyUsage: keyUsage, extendedKeyUsage: extendedKeyUsage, basicConstraints: nil)
+            ]
+        }
         
         static var schema: Schema {
             .sequence([
@@ -58,10 +71,6 @@ struct Asn1CertificateRequestInfo: HasSchemaProtocol {
                     "basicConstraints": .optional(Asn1BasicConstraints.schema)
                 ])
             }
-            
-            /*enum CodingKeys: CodingKey {
-                case san
-            }*/
         }
         
     }
