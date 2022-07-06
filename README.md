@@ -103,7 +103,7 @@ try await acme.account.deactivate()
 
 Fetch an Order by its URL:
 ```swift
-let latest = try await acme.orders.get(order: order.url!)
+let latest = try await acme.orders.get(url: order.url!)
 ```
 
 <br/>
@@ -111,7 +111,7 @@ let latest = try await acme.orders.get(order: order.url!)
 
 Refresh an Order instance with latest information from the server:
 ```swift
-try await acme.orders.refresh(order: &order)
+try await acme.orders.refresh(&order)
 ```
 
 <br/>

@@ -42,7 +42,7 @@ extension AcmeSwift {
         /// Fetches the latest information about an existing Order
         /// - Parameters:
         ///   - order: an existing Order object to be updated.
-        public func refresh(order: inout AcmeOrderInfo) async throws {
+        public func refresh(_ order: inout AcmeOrderInfo) async throws {
             try await self.client.ensureLoggedIn()
             
             guard let url = order.url else {
