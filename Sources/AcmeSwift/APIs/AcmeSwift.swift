@@ -97,11 +97,6 @@ public class AcmeSwift {
         
         let response = try await client.execute(request, deadline: .now() + TimeAmount.seconds(15), logger: self.logger)
         
-        /*var respBody = try await response.body.collect(upTo: 2*1024*1024)
-        let data = respBody.readData(length: respBody.readableBytes)
-        //let data = respBody.getData(at: 0, length: respBody.readableBytes)
-        print("\n••••RESPONSE: \(String(data: data ?? Data(), encoding: .utf8)!)")*/
-        
         return (result: try await response.decode(as: T.Response.self, decoder: self.decoder), headers: response.headers)
     }
 }
