@@ -23,12 +23,29 @@ public struct AcmeX509Csr {
         
         return csr
     }
-    
+
+    public static func rsa(key: _CryptoExtras._RSA.Signing.PrivateKey = try! .init(keySize: .bits2048), subject: X509Subject? = nil, order: AcmeOrderInfo, keyUsage: X509KeyUsage? = nil, extendedKeyUsage: [X509ExtendedKeyUsageOID]? = nil) throws -> AcmeX509Csr {
+        guard order.identifiers.count > 0 else {
+            throw X509Error.noDomains("At least 1 DNS name is required")
+        }
+        let domains = order.identifiers.map{$0.value}
+        let rsa = try RsaCSR.init(key: key, subject: subject, domains: domains, keyUsage: keyUsage, extendedKeyUsage: extendedKeyUsage)
+        let csr = self.init(privateKey: rsa.key.derRepresentation, privateKeyPem: rsa.key.pemEncoded(), asn1Csr: rsa.asn1Csr)
+        
+        return csr
+    }
+
     public static func rsa(keyPem: String, subject: X509Subject? = nil, domains: [String]) throws -> AcmeX509Csr {
         let key = try _CryptoExtras._RSA.Signing.PrivateKey.init(pemRepresentation: keyPem)
         return try rsa(key: key, subject: subject, domains: domains)
     }
-    
+
+    public static func rsa(keyPem: String, subject: X509Subject? = nil, order: AcmeOrderInfo) throws -> AcmeX509Csr {
+        let key = try _CryptoExtras._RSA.Signing.PrivateKey.init(pemRepresentation: keyPem)
+        let domains = order.identifiers.map{$0.value}
+        return try rsa(key: key, subject: subject, domains: domains)
+    }
+
     /// A CSR using a P256 private key
     public static func ecdsa(key: Crypto.P256.Signing.PrivateKey = .init(), subject: X509Subject? = nil, domains: [String], keyUsage: X509KeyUsage? = nil,  extendedKeyUsage: [X509ExtendedKeyUsageOID]? = nil) throws -> AcmeX509Csr {
         guard domains.count > 0 else {
@@ -37,10 +54,27 @@ public struct AcmeX509Csr {
         let ecdsa = try EcdsaCSR.init(key: key, subject: subject, domains: domains, keyUsage: keyUsage, extendedKeyUsage: extendedKeyUsage)
         return self.init(privateKey: ecdsa.key.derRepresentation, privateKeyPem: ecdsa.key.pemEncoded(), asn1Csr: ecdsa.asn1Csr)
     }
-    
+
+    /// A CSR using a P256 private key
+    public static func ecdsa(key: Crypto.P256.Signing.PrivateKey = .init(), subject: X509Subject? = nil, order: AcmeOrderInfo, keyUsage: X509KeyUsage? = nil,  extendedKeyUsage: [X509ExtendedKeyUsageOID]? = nil) throws -> AcmeX509Csr {
+        guard order.identifiers.count > 0 else {
+            throw X509Error.noDomains("At least 1 DNS name is required")
+        }
+        let domains = order.identifiers.map{$0.value}
+        let ecdsa = try EcdsaCSR.init(key: key, subject: subject, domains: domains, keyUsage: keyUsage, extendedKeyUsage: extendedKeyUsage)
+        return self.init(privateKey: ecdsa.key.derRepresentation, privateKeyPem: ecdsa.key.pemEncoded(), asn1Csr: ecdsa.asn1Csr)
+    }
+
     /// A CSR using a P256 private key
     public static func ecdsa(keyPem: String, subject: X509Subject? = nil, domains: [String]) throws -> AcmeX509Csr {
         let key = try Crypto.P256.Signing.PrivateKey.init(pemRepresentation: keyPem)
+        return try ecdsa(key: key, subject: subject, domains: domains)
+    }
+    
+    /// A CSR using a P256 private key
+    public static func ecdsa(keyPem: String, subject: X509Subject? = nil, order: AcmeOrderInfo) throws -> AcmeX509Csr {
+        let key = try Crypto.P256.Signing.PrivateKey.init(pemRepresentation: keyPem)
+        let domains = order.identifiers.map{$0.value}
         return try ecdsa(key: key, subject: subject, domains: domains)
     }
     
