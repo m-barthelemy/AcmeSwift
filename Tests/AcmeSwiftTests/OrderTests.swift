@@ -52,7 +52,7 @@ final class OrderTests: XCTestCase {
             XCTAssert(challengeDescriptions.count == 2, "Ensure we have 1 pending challenge")
             XCTAssert(challengeDescriptions.filter({$0.type == .dns}).count == 2, "Ensure challenges are of the desired type")
             
-            try await acme.orders.refresh(order: &order)
+            try await acme.orders.refresh(&order)
 
         }
         catch(let error) {
@@ -61,7 +61,7 @@ final class OrderTests: XCTestCase {
         }
     }
     
-    /*func testWrapItUpLikeABurrito() async throws {
+    func testWrapItUpLikeABurrito() async throws {
         let privateKeyPem = """
             -----BEGIN PRIVATE KEY-----
             MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQglxrdsu3lP83xzUej
@@ -91,16 +91,17 @@ final class OrderTests: XCTestCase {
             }
             print("\n =====> CREATE DNS CHALLENGES!!\n")
             
-            try await Task.sleep(nanoseconds: 6_000_000_000)
+            try await Task.sleep(for: .seconds(20))
             
             let failed = try await acme.orders.validateChallenges(from: order, preferring: .dns)
             guard failed.count == 0 else {
                 fatalError("Some validations failed! \(failed)")
             }
-            try await acme.orders.refresh(order: &order)
+            try await acme.orders.refresh(&order)
             print("\n => order: \(toJson(order))")
 
-            let csr = try AcmeX509Csr.ecdsa(domains: domains)
+            //let csr = try AcmeX509Csr.ecdsa(domains: domains)
+            let csr = try AcmeX509Csr.ecdsa(order: order)
         
             let finalized = try await acme.orders.finalize(order: order, withCsr: csr)
             let certs = try await acme.certificates.download(for: finalized)
@@ -112,7 +113,7 @@ final class OrderTests: XCTestCase {
             print("\n•••• BOOM! \(error)")
             throw error
         }
-    }*/
+    }
     
     private func toJson<T: Encodable>(_ value: T) -> String {
         let encoder = JSONEncoder()
