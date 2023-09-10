@@ -16,8 +16,8 @@ let package = Package(
         .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.10.0"),
         .package(url: "https://github.com/apple/swift-crypto.git", from: "2.1.0"),
         .package(url: "https://github.com/vapor/jwt-kit.git", branch: "main"),
-        // x509
-        .package(url: "https://github.com/outfoxx/PotentCodables.git", from: "2.2.0"),
+        .package(url: "https://github.com/apple/swift-certificates.git", from: "1.0.0-beta.1"),
+        .package(url: "https://github.com/apple/swift-asn1.git", from: "1.0.0-beta.1")
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -29,7 +29,8 @@ let package = Package(
                 .product(name: "Crypto", package: "swift-crypto"),
                 .product(name: "_CryptoExtras", package: "swift-crypto"),
                 .product(name: "JWTKit", package: "jwt-kit"),
-                "PotentCodables"
+                .product(name: "X509", package: "swift-certificates"),
+                .product(name: "SwiftASN1", package: "swift-asn1")
             ]),
         .testTarget(
             name: "AcmeSwiftTests",

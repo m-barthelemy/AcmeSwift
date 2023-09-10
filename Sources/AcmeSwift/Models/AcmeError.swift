@@ -26,6 +26,8 @@ public enum AcmeError: Error {
     
     /// A resource should have a URL, returned in a response "Location" header, but couldn't find or parse the header.
     case noResourceUrl
+
+    case noDomains(String)
 }
 
 public struct AcmeResponseError: Codable, Error {

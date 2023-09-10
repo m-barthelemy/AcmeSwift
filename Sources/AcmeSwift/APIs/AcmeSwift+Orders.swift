@@ -1,6 +1,9 @@
 import Foundation
 import Crypto
+import _CryptoExtras
 import JWTKit
+import SwiftASN1
+import X509
 
 extension AcmeSwift {
     
@@ -33,6 +36,8 @@ extension AcmeSwift {
         /// - Parameters:
         ///   - url: The URL of the Order.
         public func get(url: URL) async throws -> AcmeOrderInfo {
+            try await self.client.ensureLoggedIn()
+
             let ep = GetOrderEndpoint(url: url)
             var (info, headers) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
             info.url = URL(string: headers["Location"].first ?? "")
@@ -96,17 +101,96 @@ extension AcmeSwift {
             let (info, _) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
             return info
         }
+
+        /// Finalizes an Order and send the ECDSA CSR.
+        /// - Parameters:
+        ///   - order: The `AcmeOrderInfo` returned by the call to `.create()`
+        ///   - subject: Subject of certificate
+        ///   - domains: Domains for certificate
+        /// - Throws: Errors that can occur when executing the request.
+        /// - Returns: Returns  `Certificate.PrivateKey`, `CertificateSigningRequest` and `Account`.
+        public func finalizeWithEcdsa(order: AcmeOrderInfo, subject: String? = nil, domains: [String]) async throws -> (Certificate.PrivateKey, CertificateSigningRequest, AcmeOrderInfo) {
+            guard domains.count > 0 else {
+                throw AcmeError.noDomains("At least 1 DNS name is required")
+            }
+
+            let p256 = P256.Signing.PrivateKey()
+            let privateKey = Certificate.PrivateKey(p256)
+            let commonName = subject ?? domains[0]
+            let name = try DistinguishedName {
+                CommonName(commonName)
+            }
+            let extensions = try Certificate.Extensions {
+                SubjectAlternativeNames(domains.map({ GeneralName.dnsName($0) }))
+            }
+            let extensionRequest = ExtensionRequest(extensions: extensions)
+            let attributes = try CertificateSigningRequest.Attributes(
+                [.init(extensionRequest)]
+            )
+            let csr = try CertificateSigningRequest(
+                version: .v1,
+                subject: name,
+                privateKey: privateKey,
+                attributes: attributes,
+                signatureAlgorithm: .ecdsaWithSHA256
+            )
+            
+            let account = try await finalize(order: order, withCsr: csr)
+
+            return (privateKey, csr, account)
+        }
+
+        /// Finalizes an Order and send the RSA CSR.
+        /// - Parameters:
+        ///   - order: The `AcmeOrderInfo` returned by the call to `.create()`
+        ///   - subject: Subject of certificate
+        ///   - domains: Domains for certificate
+        /// - Throws: Errors that can occur when executing the request.
+        /// - Returns: Returns  `Certificate.PrivateKey`, `CertificateSigningRequest` and `Account`.
+        public func finalizeWithRsa(order: AcmeOrderInfo, subject: String? = nil, domains: [String]) async throws -> (Certificate.PrivateKey, CertificateSigningRequest, AcmeOrderInfo) {
+            guard domains.count > 0 else {
+                throw AcmeError.noDomains("At least 1 DNS name is required")
+            }
+
+            let p256 = try _CryptoExtras._RSA.Signing.PrivateKey(keySize: .bits2048)
+            let privateKey = Certificate.PrivateKey(p256)
+            let commonName = subject ?? domains[0]
+            let name = try DistinguishedName {
+                CommonName(commonName)
+            }
+            let extensions = try Certificate.Extensions {
+                SubjectAlternativeNames(domains.map({ GeneralName.dnsName($0) }))
+            }
+            let extensionRequest = ExtensionRequest(extensions: extensions)
+            let attributes = try CertificateSigningRequest.Attributes(
+                [.init(extensionRequest)]
+            )
+            let csr = try CertificateSigningRequest(
+                version: .v1,
+                subject: name,
+                privateKey: privateKey,
+                attributes: attributes,
+                signatureAlgorithm: .sha256WithRSAEncryption
+            )
+
+            let account = try await finalize(order: order, withCsr: csr)
+
+            return (privateKey, csr, account)
+        }
         
         /// Finalizes an Order and send the CSR.
         /// - Parameters:
         ///   - order: The `AcmeOrderInfo` returned by the call to `.create()`
-        ///   - withCsr: An instance of an `AcmeX509Csr`.
+        ///   - withCsr: An instance of an `Certificate`.
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  the `Account`.
-        public func finalize(order: AcmeOrderInfo, withCsr: AcmeX509Csr) async throws -> AcmeOrderInfo {
+        public func finalize(order: AcmeOrderInfo, withCsr csr: CertificateSigningRequest) async throws -> AcmeOrderInfo {
             try await self.client.ensureLoggedIn()
-            
-            let csrBytes = try withCsr.derEncoded()
+
+            var serializer = DER.Serializer()
+            try serializer.serialize(csr)
+
+            let csrBytes = Data(serializer.serializedBytes)
             let pemStr = csrBytes.toBase64UrlString()
             let ep = FinalizeOrderEndpoint(orderURL: order.finalize, spec: .init(csr: pemStr))
             

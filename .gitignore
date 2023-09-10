@@ -1,0 +1,12 @@
+## Build directory
+.build/
+
+## Xcode ser settings
+xcuserdata/
+.swiftpm/xcode
+
+## macOS files
+.DS_Store
+
+## Resolved package dependencies
+Package.resolved
