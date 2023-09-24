@@ -2,6 +2,9 @@ import XCTest
 import AsyncHTTPClient
 import NIO
 import Logging
+import SwiftASN1
+import X509
+import Crypto
 
 @testable import AcmeSwift
 
@@ -100,14 +103,11 @@ final class OrderTests: XCTestCase {
             try await acme.orders.refresh(&order)
             print("\n => order: \(toJson(order))")
 
-            //let csr = try AcmeX509Csr.ecdsa(domains: domains)
-            let csr = try AcmeX509Csr.ecdsa(order: order)
-        
-            let finalized = try await acme.orders.finalize(order: order, withCsr: csr)
+            let (key, _, finalized) = try await acme.orders.finalizeWithEcdsa(order: order, domains: domains)
             let certs = try await acme.certificates.download(for: finalized)
             try certs.joined(separator: "\n").write(to: URL(fileURLWithPath: "cert.pem"), atomically: true, encoding: .utf8)
             
-            try csr.privateKeyPem.write(to: URL(fileURLWithPath: "key.pem"), atomically: true, encoding: .utf8)
+            try key.serializeAsPEM().pemString.write(to: URL(fileURLWithPath: "key.pem"), atomically: true, encoding: .utf8)
         }
         catch(let error) {
             print("\n•••• BOOM! \(error)")

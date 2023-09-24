@@ -168,13 +168,12 @@ let finalizedOrder = try await acme.orders.finalize(order: order, withPemCsr: ".
 If you want AcmeSwift to generate one for you:
 ```swift
 // ECDSA key and certificate
-let csr = try AcmeX509Csr.ecdsa(domains: ["mydomain.com", "www.mydomain.com"])
+let (privateKey, csr, finalizedOrder) = try await acme.orders.finalizeWithEcdsa(order: order, domains: ["mydomain.com", "www.mydomain.com"])
 // .. or, good old RSA
-let csr = try AcmeX509Csr.rsa(domains: ["mydomain.com", "www.mydomain.com"])
+let (privateKey, csr, finalizedOrder) = try await acme.orders.finalizeWithRsa(order: order, domains: ["mydomain.com", "www.mydomain.com"])
 
-let finalizedOrder = try await acme.orders.finalize(order: order, withCsr: csr)
 // You can access the private key used to generate the CSR (and to use once you get the certificate)
-print("\n• Private key: \(csr.privateKeyPem)")
+print("\n• Private key: \(try privateKey.serializeAsPEM().pemString)")
 ```
 
 <br/>
@@ -255,10 +254,8 @@ guard failed.count == 0 else {
 }
 
 // Let's create a private key and CSR using the rudimentary feature provided by AcmeSwift
-let csr = try AcmeX509Csr.ecdsa(domains: domains)
-
 // If the validation didn't throw any error, we can now send our Certificate Signing Request...
-let finalized = try await acme.orders.finalize(order: order, withCsr: csr)
+let (privateKey, csr, finalized) = try await acme.orders.finalizeWithRsa(order: order, domains: domains)
 
 // ... and the certificate is ready to download!
 let certs = try await acme.certificates.download(for: finalized)
@@ -268,7 +265,7 @@ try certs.joined(separator: "\n").write(to: URL(fileURLWithPath: "cert.pem"), at
 
 // Now we also need to export the private key, encoded as PEM
 // If your server doesn't accept it, append a line return to it.
-try csr.privateKeyPem.write(to: URL(fileURLWithPath: "key.pem"), atomically: true, encoding: .utf8)
+try privateKey.serializeAsPEM().pemString.write(to: URL(fileURLWithPath: "key.pem"), atomically: true, encoding: .utf8)
 ``` 
 
 
