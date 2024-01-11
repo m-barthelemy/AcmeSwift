@@ -18,7 +18,7 @@ final class OrderTests: XCTestCase {
         
         let config = HTTPClient.Configuration(certificateVerification: .fullVerification, backgroundActivityLogger: self.logger)
         self.http = HTTPClient(
-            eventLoopGroupProvider: .createNew,
+            eventLoopGroupProvider: .singleton,
             configuration: config
         )
     }

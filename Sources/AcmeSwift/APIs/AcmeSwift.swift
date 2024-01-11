@@ -24,7 +24,7 @@ public class AcmeSwift {
     private let logger: Logger
     private let decoder: JSONDecoder
     
-    public init(client: HTTPClient = .init(eventLoopGroupProvider: .createNew), acmeEndpoint: AcmeEndpoint = .letsEncrypt, logger: Logger = Logger.init(label: "AcmeSwift")) async throws {
+    public init(client: HTTPClient = .init(eventLoopGroupProvider: .singleton), acmeEndpoint: AcmeEndpoint = .letsEncrypt, logger: Logger = Logger.init(label: "AcmeSwift")) async throws {
         self.client = client
         self.server = acmeEndpoint.value
         self.logger = logger

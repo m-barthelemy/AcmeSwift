@@ -13,7 +13,7 @@ let package = Package(
             targets: ["AcmeSwift"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.10.0"),
+        .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.19.0"),
         .package(url: "https://github.com/apple/swift-crypto.git", "2.1.0" ..< "4.0.0"),
         .package(url: "https://github.com/vapor/jwt-kit.git", from: "4.13.1"),
         .package(url: "https://github.com/apple/swift-certificates.git", from: "1.2.0"),
