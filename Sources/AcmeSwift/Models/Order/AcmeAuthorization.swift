@@ -57,7 +57,7 @@ public struct AcmeAuthorization: Codable {
             /// A DNS challenge requiring the creation of TXT records to prove ownership of a domain or record.
             case dns = "dns-01"
 
-            /// A TLS-ALPN-01 challenge
+            /// A TLS-ALPN-01 challenge.
             case alpn = "tls-alpn-01"
         }
         

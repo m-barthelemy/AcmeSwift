@@ -1,7 +1,7 @@
 import Foundation
 
 public enum AcmeError: Error {
-    // This Account information has no private key
+    /// This Account information has no private key
     case invalidAccountInfo
     
     /// You need to call `account.use()` before performing this operation
