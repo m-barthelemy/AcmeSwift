@@ -17,7 +17,8 @@ extension AcmeSwift {
         
         
         /// List pending orders for the Account.
-        /// WARNING: no ACMEv2 provider seems to have this actually implemented. Doesn't work with Lets Encrypt.
+        ///
+        /// - Warning: No ACMEv2 provider seems to have this actually implemented. Doesn't work with Let's Encrypt.
         public func list() async throws -> [URL] {
             try await self.client.ensureLoggedIn()
             
@@ -32,7 +33,7 @@ extension AcmeSwift {
         }
         
         
-        /// Fetches the latest status of an existing Order
+        /// Fetches the latest status of an existing Order.
         /// - Parameters:
         ///   - url: The URL of the Order.
         public func get(url: URL) async throws -> AcmeOrderInfo {
@@ -44,7 +45,7 @@ extension AcmeSwift {
             return info
         }
         
-        /// Fetches the latest information about an existing Order
+        /// Fetches the latest information about an existing Order.
         /// - Parameters:
         ///   - order: an existing Order object to be updated.
         public func refresh(_ order: inout AcmeOrderInfo) async throws {
@@ -59,7 +60,7 @@ extension AcmeSwift {
         
         /// Creates an Order for obtaining a new certificate.
         /// - Parameters:
-        ///   - domains: The domains for which we want to create a certificate. Example: `["*.mydomain.com", "mydomain.com"]`
+        ///   - domains: The domains for which we want to create a certificate. Example: `["*.mydomain.com", "mydomain.com"]`.
         ///   - notBefore: Minimum Date when the future certificate will start being valid. **Note:** Let's Encrypt does not support setting this.
         ///   - notAfter: Desired expiration date of the future certificate. **Note:** Let's Encrypt does not support setting this.
         /// - Throws: Errors that can occur when executing the request.
@@ -87,7 +88,7 @@ extension AcmeSwift {
         
         /// Finalizes an Order and send the CSR.
         /// - Parameters:
-        ///   - order: The `AcmeOrderInfo` returned by the call to `.create()`
+        ///   - order: The `AcmeOrderInfo` returned by the call to `.create()`.
         ///   - withPemCsr: The CSR (Certificate Signing Request) **in PEM format**.
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  the `Account`.
@@ -104,9 +105,9 @@ extension AcmeSwift {
 
         /// Finalizes an Order and send the ECDSA CSR.
         /// - Parameters:
-        ///   - order: The `AcmeOrderInfo` returned by the call to `.create()`
-        ///   - subject: Subject of certificate
-        ///   - domains: Domains for certificate
+        ///   - order: The `AcmeOrderInfo` returned by the call to `.create()`.
+        ///   - subject: Subject of certificate.
+        ///   - domains: Domains for certificate.
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  `Certificate.PrivateKey`, `CertificateSigningRequest` and `Account`.
         public func finalizeWithEcdsa(order: AcmeOrderInfo, subject: String? = nil, domains: [String]) async throws -> (Certificate.PrivateKey, CertificateSigningRequest, AcmeOrderInfo) {
@@ -142,9 +143,9 @@ extension AcmeSwift {
 
         /// Finalizes an Order and send the RSA CSR.
         /// - Parameters:
-        ///   - order: The `AcmeOrderInfo` returned by the call to `.create()`
-        ///   - subject: Subject of certificate
-        ///   - domains: Domains for certificate
+        ///   - order: The `AcmeOrderInfo` returned by the call to `.create()`.
+        ///   - subject: Subject of certificate.
+        ///   - domains: Domains for certificate.
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  `Certificate.PrivateKey`, `CertificateSigningRequest` and `Account`.
         public func finalizeWithRsa(order: AcmeOrderInfo, subject: String? = nil, domains: [String]) async throws -> (Certificate.PrivateKey, CertificateSigningRequest, AcmeOrderInfo) {
@@ -180,7 +181,7 @@ extension AcmeSwift {
         
         /// Finalizes an Order and send the CSR.
         /// - Parameters:
-        ///   - order: The `AcmeOrderInfo` returned by the call to `.create()`
+        ///   - order: The `AcmeOrderInfo` returned by the call to `.create()`.
         ///   - withCsr: An instance of an `Certificate`.
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  the `Account`.
@@ -216,11 +217,13 @@ extension AcmeSwift {
         }
         
         /// Gets a user-friendly list of the Order challenges that need to be published.
+        ///
         /// These are the challenges that have a `pending` or `invalid` status.
-        /// NOTE: ALPN challenges are not returned.
+        ///
+        /// - Note: ALPN challenges are not returned.
         /// - Parameters:
         ///   - from: The `AcmeOrderInfo` representing the certificates Order.
-        ///   - preferring: Your preferred challenge validation method. Note: when requesting a wildcard certificate, a challenge will have to be published over DNS regardless of your preferred method..
+        ///   - preferring: Your preferred challenge validation method. Note: when requesting a wildcard certificate, a challenge will have to be published over DNS regardless of your preferred method.
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  a list of `ChallengeDescription` items that explain what information has to be published in order to validate the challenges.
         public func describePendingChallenges(from order: AcmeOrderInfo, preferring: AcmeAuthorization.Challenge.ChallengeType) async throws -> [ChallengeDescription] {
@@ -254,12 +257,19 @@ extension AcmeSwift {
             return descs
         }
         
-        /// Call this to get the ACMEv2 provider to verify the pending challenges once you have published them over HTTP or DNS
+        /// Call this to get the ACMEv2 provider to verify the pending challenges once you have published them over HTTP or DNS.
+        ///
+        /// Request challenges to be validated only after they have been published. 
+        /// - For DNS-based challenges, repeatedly wait and poll until the order expires or becomes invalid, or a timeout you define has been passed.
+        /// - For HTTP-based challenges, request verification once, then wait for the endpoints to have been called before requesting again. Similarly, repeat the process until the order expires or becomes invalid, or a timeout you define has been passed.
+        ///
+        /// - SeeAlso: [ACME Section 7.5.1 - Responding to Challenges](https://www.rfc-editor.org/rfc/rfc8555.html#section-7.5.1)
+        ///
         /// - Parameters:
         ///   - from: The `AcmeOrderInfo` representing the certificates Order.
         ///   - preferring: Your preferred challenge validation method. Note: when requesting a wildcard certificate, a challenge will have to be published over DNS regardless of your preferred method..
         /// - Throws: Errors that can occur when executing the request.
-        /// - Returns: Returns  a list of `AcmeAuthorization` containing the challenges that could **not** be validated.
+        /// - Returns: Returns  a list of `AcmeAuthorization` containing the challenges that were not validated yet and may be in the process of being validated, or have failed.
         @discardableResult
         public func validateChallenges(from order: AcmeOrderInfo, preferring: AcmeAuthorization.Challenge.ChallengeType) async throws -> [AcmeAuthorization.Challenge] {
             // get pending challenges
@@ -311,6 +321,7 @@ extension AcmeSwift {
         }
         
         /// Return the SHA256 digest of the ACMEv2 account public key's JWK JSON.
+        ///
         /// This value has to be present in an HTTP challenge value.
         private func getAccountThumbprint() throws -> Data {
             guard let login = self.client.login else {

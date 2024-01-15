@@ -21,7 +21,7 @@ import PackageDescription
 let package = Package(
     dependencies: [
         ...
-        .package(url: "https://github.com/m-barthelemy/AcmeSwift.git", .branch("master")),
+        .package(url: "https://github.com/m-barthelemy/AcmeSwift.git", from: "1.0.0-beta3"),
     ],
     targets: [
         .target(name: "App", dependencies: [
@@ -63,9 +63,10 @@ let account = acme.account.create(contacts: ["my.email@domain.com"], validateTOS
 ```
 
 The information returned by this method is an `AcmeAccountInfo` object that can be directly reused for authentication. 
-For example, you can encode it to JSON, save it somwewhere and then decode it in order to log into your account later.
+For example, you can encode it to JSON, save it somewhere and then decode it in order to log into your account later.
 
-⚠️ This Account information contains a private key and as such, **must** be stored securely.
+> [!WARNING]
+> This Account information contains a private key and as such, **must** be stored securely.
 
 
 <br/>
@@ -89,7 +90,8 @@ If you created your account using AcmeSwift, the private key in PEM format is st
 
 - Deactivate an existing account:
 
-⚠️ Only use this if you are absolutely certain that the account needs to be permanently deactivated. There is no going back!
+> [!CAUTION]
+> Only use this if you are absolutely certain that the account needs to be permanently deactivated. There is no going back!
 
 ```swift
 
@@ -178,7 +180,8 @@ print("\n• Private key: \(try privateKey.serializeAsPEM().pemString)")
 
 <br/>
 
-> **NOTE**: The CSR must contain all the DNS names requested by the Order in its SAN (subjectAltName) field.
+> [!NOTE]  
+> The CSR must contain all the DNS names requested by the Order in its SAN (subjectAltName) field.
 
 
 <br/>
@@ -199,7 +202,7 @@ for var cert in certs {
 This return a list of PEM-encoded certificates. The first item is the actual certificate for the requested domains.
 The following items are the other certificates required to establish the full certification chain (issuing CA, root CA...).
 
-The order of the items in the list is directly compatible with the way Nginx expects them; you can concatenate all the items into a single file and pass this file to the `ssl_certificate` directive:
+The order of the items in the list is directly compatible with the way SwiftNIO and Nginx expects them; you can concatenate all the items into a single file and pass this file to the `ssl_certificate` directive:
 ```swift
 try certs.joined(separator: "\n")
     .write(to: URL(fileURLWithPath: "cert.pem"), atomically: true, encoding: .utf8)
@@ -212,6 +215,43 @@ try certs.joined(separator: "\n")
 try await acme.certificates.revoke(certificatePem: "....")
 ```
 
+#### Validating Existing Certificates
+
+Since Let's Encrypt recommends only renewing certificates after 60 days, it's often useful to check existing certificates for validity before requesting a new one:
+
+```swift
+import NIOSSL
+
+let certURL = URL(fileURLWithPath: "cert.pem").absoluteURL
+let domains = ["*.ponies.com", "ponies.com"]
+logger.notice("Refreshing certificate for \(domains.joined(separator: ", "))")
+
+do {
+    let existingCerts = try NIOSSLCertificate.fromPEMFile(certURL.path(percentEncoded: false))
+    
+    logger.notice("Found existing certificates: \(existingCerts)")
+    if let certificate = existingCerts.first {
+        let expirationDate = Date(timeIntervalSince1970: TimeInterval(certificate.notValidAfter))
+        
+        /// Get the names gregistered in the current certificate to see if they changed
+        let allNames = Set(certificate._subjectAlternativeNames().map { name -> String? in
+            guard case .dnsName = name.nameType else { return nil }
+            return String(decoding: name.contents, as: UTF8.self)
+        }.compactMap { $0 })
+        
+        /// If the expiration date is more than 2 months away and contains all the domains we are interested in, stop renewing.
+        if expirationDate.timeIntervalSinceNow > 60*24*60*60 && allNames.isSuperset(of: domains) {
+            logger.notice("Certificate for \(domains.joined(separator: ", ")) still valid. Expires on \(expirationDate). Renewing on \(expirationDate.advanced(by: -30*24*60*60))")
+            return
+        }
+    }
+} catch {
+    // Catch any errors here to log them, but otherwise continue
+    logger.notice("An issue occured loading existing certificates: \(error)")
+}
+
+// ... Continue renewing certificate
+```
 
 ## Example
 
@@ -247,10 +287,18 @@ for desc in try await acme.orders.describePendingChallenges(from: order, preferr
 
 
 // Assuming the challenges have been published, we can now ask Let's Encrypt to validate them.
-// If some challenges fail to validate, it is safe to call validateChallenges() again after fixing the underlying issue.
-let failed = try await acme.orders.validateChallenges(from: order, preferring: .dns)
-guard failed.count == 0 else {
-    fatalError("Some validations failed! \(failed)")
+// If some challenges fail to validate, it is safe to call validateChallenges() again after fixing the underlying issue. Note that challenges may take a while to complete, and the ACME specification recommends polling as soon as you recieve a request or know the challenge can be verified: https://www.rfc-editor.org/rfc/rfc8555.html#section-7.5.1
+var remainingChallenges = try await acme.orders.validateChallenges(from: order, preferring: .dns)
+// Poll with progressively longer timeouts. These are arbitrary and may be modified to suit your needs (certbot tries every second, but this seems more kind if there is no rush).
+for timeout in [5, 10, 10, 10, 30] {
+    guard !remainingChallenges.isEmpty else { break }
+    try await Task.sleep(for: .seconds(timeout))
+    remainingChallenges = try await acme.orders.validateChallenges(from: order, preferring: .dns)
+}
+// Give up if we still haven't satisfied the request:
+guard remainingChallenges.isEmpty else {
+    struct ChallengeValidationError: Error {}
+    throw ChallengeValidationError()
 }
 
 // Let's create a private key and CSR using the rudimentary feature provided by AcmeSwift

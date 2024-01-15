@@ -2,10 +2,10 @@ import Foundation
 
 
 struct CertificateRevokeSpec: Codable {
-    /// PEM representation of the certificate
+    /// PEM representation of the certificate.
     public var certificate: String
     
-    /// Reason for the revocation
+    /// Reason for the revocation.
     public var reason: AcmeRevokeReason?
 }
 

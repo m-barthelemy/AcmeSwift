@@ -2,6 +2,7 @@ import Foundation
 
 extension String {
     
+    /// Decodes a Base64 string into a decoded string.
     func fromBase64Url() -> String? {
         var base64 = self
         base64 = base64.replacingOccurrences(of: "-", with: "+")
@@ -15,6 +16,7 @@ extension String {
         return String(data: data, encoding: .utf8)
     }
     
+    /// Encodes the string as a Base64 string suitable for use as URL parameters.
     func toBase64Url() -> String {
         var result = Data(self.utf8).base64EncodedString()
         result = result.replacingOccurrences(of: "+", with: "-")
@@ -23,6 +25,7 @@ extension String {
         return result
     }
     
+    /// Converts a Base64 string to one suitable for use as URL parameters.
     func base64ToBase64Url() -> String {
         return self
             .replacingOccurrences(of: "+", with: "-")
@@ -30,6 +33,7 @@ extension String {
             .replacingOccurrences(of: "=", with: "")
     }
     
+    /// Converts a PEM certificate or key into a Base64 string suitable for use as URL parameters.
     func pemToBase64Url() -> String {
         return self.replacingOccurrences(of: "-----BEGIN CERTIFICATE REQUEST-----", with: "")
             .replacingOccurrences(of: "-----BEGIN CERTIFICATE-----", with: "")
@@ -40,7 +44,7 @@ extension String {
             .toBase64Url()
     }
     
-    /// This converts a PEM cert back to DER
+    /// Converts a PEM certificate or key back to DER.
     func pemToData() -> Data {
         let rawData = self.replacingOccurrences(of: "-----BEGIN CERTIFICATE REQUEST-----", with: "")
             .replacingOccurrences(of: "-----BEGIN CERTIFICATE-----", with: "")
