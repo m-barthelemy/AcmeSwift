@@ -1,7 +1,7 @@
 import Foundation
 
 
-public struct AcmeOrderSpec: Codable {
+public struct AcmeOrderSpec: Codable, Sendable {
     public init(identifiers: [AcmeOrderSpec.Identifier], notBefore: Date? = nil, notAfter: Date? = nil) {
         self.identifiers = identifiers
         self.notBefore = notBefore
@@ -16,13 +16,13 @@ public struct AcmeOrderSpec: Codable {
     /// The requested value of the notAfter field in the certificate
     public var notAfter: Date? = nil
     
-    public struct Identifier: Codable {
-        
+    public struct Identifier: Codable, Sendable {
+
         public var `type`: IdentifierType = .dns
         
         public var value: String
         
-        public enum IdentifierType: String, Codable {
+        public enum IdentifierType: String, Codable, Sendable {
             case dns
         }
     }

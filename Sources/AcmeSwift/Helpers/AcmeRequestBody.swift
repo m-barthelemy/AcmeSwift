@@ -122,7 +122,7 @@ struct AcmeRequestBody<T: EndpointProtocol>: Encodable {
     }
 }
 
-public struct JWK: Codable {
+public struct JWK: Codable, Sendable {
     /// Key Type
     private(set) public var kty: KeyType = .ec
     
@@ -135,13 +135,13 @@ public struct JWK: Codable {
     /// The y coordinate for the Elliptic Curve point.
     private(set) public var y: String
     
-    public enum KeyType: String, Codable {
+    public enum KeyType: String, Codable, Sendable {
         case ec = "EC"
         case rsa = "RSA"
         case oct
     }
     
-    public enum CurveType: String, Codable {
+    public enum CurveType: String, Codable, Sendable {
         case p256 = "P-256"
     }
 }
