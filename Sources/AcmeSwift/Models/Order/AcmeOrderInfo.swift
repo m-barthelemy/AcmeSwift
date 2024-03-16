@@ -1,8 +1,8 @@
 import Foundation
 
 /// Information returned when creating a new Order
-public struct AcmeOrderInfo: Codable {
-        
+public struct AcmeOrderInfo: Codable,Sendable {
+
     /// The URL of this Order.
     internal(set) public var url: URL?
     
@@ -30,7 +30,7 @@ public struct AcmeOrderInfo: Codable {
     public let certificate: URL?
     
     
-    public enum OrderStatus: String, Codable {
+    public enum OrderStatus: String, Codable, Sendable {
         /// The certificate will not be issued.  Consider thisorder process abandoned.
         case invalid
         

@@ -10,7 +10,7 @@ struct CertificateRevokeSpec: Codable {
 }
 
 /// Reason why we request for a certificate to be revoked.
-public enum AcmeRevokeReason: Int, Codable {
+public enum AcmeRevokeReason: Int, Codable, Sendable {
     case unspecified = 0
     case keyCompromise = 1
     case cACompromise = 2

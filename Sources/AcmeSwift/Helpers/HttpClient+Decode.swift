@@ -5,7 +5,7 @@ import Logging
 
 extension HTTPClientResponse {
     
-    public enum BodyError : Swift.Error {
+    public enum BodyError : Swift.Error, Sendable {
         case noBodyData
     }
     

@@ -1,8 +1,8 @@
 import Foundation
 
 /// Account information returned when calling `get()` or `create()`
-public struct AcmeAccountInfo: Codable {
-    
+public struct AcmeAccountInfo: Codable, Sendable {
+
     /// URL containing the ID of the Account
     /// This URL is used to performa some account management operations.
     internal(set) public var url: URL?
@@ -29,7 +29,7 @@ public struct AcmeAccountInfo: Codable {
     /// No provider seems to have this fully implemented
     public let orders: URL?
     
-    public enum Status: String, Codable {
+    public enum Status: String, Codable, Sendable {
         case valid, deactivated, revoked
     }
 }

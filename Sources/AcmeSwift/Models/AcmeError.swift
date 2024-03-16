@@ -1,6 +1,6 @@
 import Foundation
 
-public enum AcmeError: Error {
+public enum AcmeError: Error, Sendable {
     // This Account information has no private key
     case invalidAccountInfo
     
@@ -30,7 +30,7 @@ public enum AcmeError: Error {
     case noDomains(String)
 }
 
-public struct AcmeResponseError: Codable, Error {
+public struct AcmeResponseError: Codable, Error, Sendable {
     public let type: AcmeErrorType
     
     public let title: String?
@@ -43,7 +43,7 @@ public struct AcmeResponseError: Codable, Error {
     
     public let subproblems: [AcmeResponseError]?
     
-    public enum AcmeErrorType: String, Codable, Error {
+    public enum AcmeErrorType: String, Codable, Error, Sendable {
         /// The request message was malformed
         case malformed = "urn:ietf:params:acme:error:malformed"
         
@@ -121,7 +121,7 @@ public struct AcmeResponseError: Codable, Error {
         case userActionRequired = "urn:ietf:params:acme:error:userActionRequired"
     }
     
-    public struct ErrorIdentifier: Codable {
+    public struct ErrorIdentifier: Codable, Sendable {
         public let type: String
         public let value: String
     }
