@@ -101,7 +101,7 @@ public class AcmeSwift {
     }
 }
 
-public enum AcmeEndpoint {
+public enum AcmeEndpoint: Sendable {
     /// The default, production Let's Encrypt endpoint
     case letsEncrypt
     /// The staging Let's Encrypt endpoint, for tests. Issues certificate not recognized by clients/browsers
