@@ -10,10 +10,10 @@ public struct AcmeOrderSpec: Codable, Sendable {
     
     public var identifiers: [Identifier]
     
-    /// The requested value of the notBefore field in the certificate
+    /// The requested value of the notBefore field in the certificate.
     public var notBefore: Date? = nil
     
-    /// The requested value of the notAfter field in the certificate
+    /// The requested value of the notAfter field in the certificate.
     public var notAfter: Date? = nil
     
     public struct Identifier: Codable, Sendable {

@@ -1,8 +1,8 @@
 import Foundation
 
-/// Information returned when creating a new Order
-public struct AcmeOrderInfo: Codable,Sendable {
-
+/// Information returned when creating a new Order.
+public struct AcmeOrderInfo: Codable, Sendable {
+        
     /// The URL of this Order.
     internal(set) public var url: URL?
     
@@ -31,22 +31,26 @@ public struct AcmeOrderInfo: Codable,Sendable {
     
     
     public enum OrderStatus: String, Codable, Sendable {
-        /// The certificate will not be issued.  Consider thisorder process abandoned.
+        /// The certificate will not be issued. Consider this order process abandoned.
         case invalid
         
         /// The server does not believe that the client has fulfilled all the requirements.
-        ///  Check the "authorizations" array for entries that are still pending.
+        ///
+        /// Check the "authorizations" array for entries that are still pending.
         case pending
         
         /// The server agrees that the requirements have been fulfilled, and is awaiting finalization.
+        ///
         /// Submit a finalization request.
         case ready
         
         /// The certificate is being issued (`finalize()` has been called).
+        ///
         /// Send a POST-as-GET request after the time given in the Retry-After header field of the response, if any.
         case processing
         
         /// The server has issued the certificate and provisioned its URL to the "certificate" field of the order.
+        ///
         /// Download the certificate.
         case valid
     }

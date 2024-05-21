@@ -79,7 +79,7 @@ struct AcmeRequestBody<T: EndpointProtocol>: Encodable {
         self.payload = payload.body ?? (NoBody.init() as! T.Body)
     }
     
-    /// Encode as a JWT as described in ACMEv2 (RFC 8555)
+    /// Encode as a JWT as described in ACMEv2 (RFC 8555).
     func encode(to encoder: Encoder) throws {
         let jsonEncoder = JSONEncoder()
         jsonEncoder.dateEncodingStrategy = .iso8601
@@ -146,7 +146,7 @@ public struct JWK: Codable, Sendable {
     }
 }
 
-// For requests that have an empty body
+/// For requests that have an empty body.
 struct NoBody: Codable {
     init(){}
 }
