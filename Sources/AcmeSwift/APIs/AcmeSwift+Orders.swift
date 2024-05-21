@@ -231,10 +231,8 @@ extension AcmeSwift {
             let accountThumbprint = try getAccountThumbprint()
             let authorizations = try await getAuthorizations(from: order)
             var descs: [ChallengeDescription] = []
-            for auth in authorizations.filter({$0.status == .pending}) {
-                for challenge in auth.challenges.filter({
-                    ($0.type == preferring || auth.wildcard == true) && ($0.status == .pending || $0.status == .invalid)
-                }) {
+            for auth in authorizations where auth.status == .pending {
+                for challenge in auth.challenges where (challenge.type == preferring || auth.wildcard == true) && (challenge.status == .pending || challenge.status == .invalid) {
                     let digest = "\(challenge.token).\(accountThumbprint.base64EncodedString().base64ToBase64Url())"
                     if challenge.type == .dns {
                         let challengeDesc = ChallengeDescription(

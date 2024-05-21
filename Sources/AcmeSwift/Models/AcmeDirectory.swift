@@ -1,7 +1,7 @@
 import Foundation
 
 /// The Directory endpoint of the ACMEv2 service, providing discovery information about various endpoints
-public struct AcmeDirectory: Codable {
+public struct AcmeDirectory: Codable, Sendable {
     public let newAuthz: URL?
     public let newNonce: URL
     
@@ -12,7 +12,7 @@ public struct AcmeDirectory: Codable {
     public let keyChange: URL
     public let meta: Meta
     
-    public struct Meta: Codable {
+    public struct Meta: Codable, Sendable {
         public let termsOfService: URL?
         
         /// The web page of the ACME provider.

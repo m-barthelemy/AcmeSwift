@@ -1,6 +1,6 @@
 import Foundation
 
-public struct ChallengeDescription: Codable {
+public struct ChallengeDescription: Codable, Sendable {
     /// The type of challenge.
     /// For a wildcard certificate, there will **always** be a at least one DNS challenge, even if your preferred method is HTTP.
     public let type: AcmeAuthorization.Challenge.ChallengeType

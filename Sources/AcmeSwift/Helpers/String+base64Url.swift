@@ -17,15 +17,15 @@ extension String {
     }
     
     /// Encodes the string as a Base64 string suitable for use as URL parameters.
+    @usableFromInline
     func toBase64Url() -> String {
-        var result = Data(self.utf8).base64EncodedString()
-        result = result.replacingOccurrences(of: "+", with: "-")
-        result = result.replacingOccurrences(of: "/", with: "_")
-        result = result.replacingOccurrences(of: "=", with: "")
-        return result
+        return Data(self.utf8)
+            .base64EncodedString()
+            .base64ToBase64Url()
     }
     
     /// Converts a Base64 string to one suitable for use as URL parameters.
+    @usableFromInline
     func base64ToBase64Url() -> String {
         return self
             .replacingOccurrences(of: "+", with: "-")

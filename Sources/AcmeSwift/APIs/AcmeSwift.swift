@@ -24,7 +24,7 @@ public class AcmeSwift {
     private let logger: Logger
     private let decoder: JSONDecoder
     
-    public init(client: HTTPClient = .init(eventLoopGroupProvider: .createNew), acmeEndpoint: AcmeEndpoint = .letsEncrypt, logger: Logger = Logger.init(label: "AcmeSwift")) async throws {
+    public init(client: HTTPClient = .init(eventLoopGroupProvider: .shared(MultiThreadedEventLoopGroup.singleton)), acmeEndpoint: AcmeEndpoint = .letsEncrypt, logger: Logger = Logger.init(label: "AcmeSwift")) async throws {
         self.client = client
         self.server = acmeEndpoint.value
         self.logger = logger
@@ -101,7 +101,7 @@ public class AcmeSwift {
     }
 }
 
-public enum AcmeEndpoint {
+public enum AcmeEndpoint: Sendable {
     /// The default, production Let's Encrypt endpoint
     case letsEncrypt
     /// The staging Let's Encrypt endpoint, for tests. Issues certificate not recognized by clients/browsers

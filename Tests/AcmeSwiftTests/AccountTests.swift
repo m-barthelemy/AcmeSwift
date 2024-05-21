@@ -15,7 +15,7 @@ final class AccountTests: XCTestCase {
         
         var config = HTTPClient.Configuration(certificateVerification: .fullVerification, backgroundActivityLogger: self.logger)
         self.http = HTTPClient(
-            eventLoopGroupProvider: .createNew,
+            eventLoopGroupProvider: .singleton,
             configuration: config
         )
     }
