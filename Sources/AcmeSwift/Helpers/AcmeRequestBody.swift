@@ -61,16 +61,16 @@ struct AcmeRequestBody<T: EndpointProtocol>: Encodable {
     
     init(accountURL: URL? = nil, privateKey: Crypto.P256.Signing.PrivateKey, nonce: String, payload: T) throws {
         self.privateKey = privateKey
-        let pubKey = try JWTKit.ECDSAKey.public(pem: privateKey.publicKey.pemRepresentation)
-        guard let parameters = pubKey.parameters else {
-            throw AcmeError.invalidKeyError("Public key parameters are nil")
-        }
+        let publicKey = privateKey.publicKey.rawRepresentation
         
         self.protected = .init(
             alg: .es256,
-            jwk: accountURL == nil ?  .init(
-                x: parameters.x,
-                y: parameters.y
+            jwk: accountURL == nil ? JWTKit.JWK.ecdsa(
+                nil,
+                identifier: nil,
+                x: publicKey.prefix(upTo: publicKey.count/2).base64EncodedString(),
+                y: publicKey.suffix(from: publicKey.count/2).base64EncodedString(),
+                curve: nil
             ) : nil,
             kid: accountURL,
             nonce: nonce,
@@ -105,30 +105,6 @@ struct AcmeRequestBody<T: EndpointProtocol>: Encodable {
         
         let signatureBase64 = signatureData.toBase64UrlString()
         try container.encode(signatureBase64, forKey: .signature)
-    }
-}
-
-public struct JWK: Codable, Sendable {
-    /// Key Type
-    private(set) public var kty: KeyType = .ec
-    
-    /// Curve
-    private(set) public var crv: CurveType = .p256
-    
-    /// The x coordinate for the Elliptic Curve point.
-    private(set) public var x: String
-    
-    /// The y coordinate for the Elliptic Curve point.
-    private(set) public var y: String
-    
-    public enum KeyType: String, Codable, Sendable {
-        case ec = "EC"
-        case rsa = "RSA"
-        case oct
-    }
-    
-    public enum CurveType: String, Codable, Sendable {
-        case p256 = "P-256"
     }
 }
 

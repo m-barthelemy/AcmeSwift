@@ -17,7 +17,7 @@ public enum AcmeError: Error, Sendable {
     /// No nonce (anti-replay) value was returned by the endpoint
     case noNonceReturned
     
-    case invalidKeyError(String)
+    case jwsEncodeError(String)
     
     case dataCorrupted(String)
     case errorCode(UInt, String)
