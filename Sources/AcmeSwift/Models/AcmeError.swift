@@ -20,7 +20,7 @@ public enum AcmeError: Error, Sendable {
     case jwsEncodeError(String)
     
     case dataCorrupted(String)
-    case errorCode(UInt, String?)
+    case errorCode(UInt, String)
     
     /// A resource should have a URL, returned in a response "Location" header, but couldn't find or parse the header.
     case noResourceUrl

@@ -10,10 +10,10 @@ extension String {
         while base64.count % 4 != 0 {
             base64 = base64.appending("=")
         }
-        guard let data = Data(base64Encoded: base64) else {
-            return nil
-        }
-        return String(data: data, encoding: .utf8)
+        guard let data = Data(base64Encoded: base64)
+        else { return nil }
+        
+        return String(decoding: data, as: UTF8.self)
     }
     
     /// Encodes the string as a Base64 string suitable for use as URL parameters.
