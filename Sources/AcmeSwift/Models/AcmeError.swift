@@ -19,8 +19,6 @@ public enum AcmeError: Error, Sendable {
     
     case jwsEncodeError(String)
     
-    case invalidKeyError(String)
-    
     case dataCorrupted(String)
     case errorCode(UInt, String?)
     

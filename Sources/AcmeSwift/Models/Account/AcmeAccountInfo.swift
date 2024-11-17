@@ -1,4 +1,5 @@
 import Foundation
+import JWTKit
 
 /// Account information returned when calling `get()` or `create()`.
 public struct AcmeAccountInfo: Codable, Sendable {
