@@ -18,6 +18,8 @@ public enum AcmeError: Error, Sendable {
     case noNonceReturned
     
     case jwsEncodeError(String)
+
+    case invalidKeyError(String)
     
     case dataCorrupted(String)
     case errorCode(UInt, String)
