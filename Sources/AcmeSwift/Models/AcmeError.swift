@@ -17,12 +17,10 @@ public enum AcmeError: Error, Sendable {
     /// No nonce (anti-replay) value was returned by the endpoint
     case noNonceReturned
     
-    case jwsEncodeError(String)
-    
     case invalidKeyError(String)
     
     case dataCorrupted(String)
-    case errorCode(UInt, String?)
+    case errorCode(UInt, String)
     
     /// A resource should have a URL, returned in a response "Location" header, but couldn't find or parse the header.
     case noResourceUrl

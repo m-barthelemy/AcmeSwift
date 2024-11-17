@@ -90,7 +90,7 @@ public class AcmeSwift {
         let wrappedBody = try AcmeRequestBody(accountURL: accountURL, privateKey: privateKey, nonce: nonce, payload: endpoint)
         let body = try JSONEncoder().encode(wrappedBody)
         
-        let bodyDebug = String(data: body, encoding: .utf8)!
+        let bodyDebug = String(decoding: body, as: UTF8.self)
         logger.debug("\(Self.self) Endpoint: \(endpoint.method) \(endpoint.url) request body: \(bodyDebug)")
         
         request.body = .bytes(ByteBuffer(data: body))

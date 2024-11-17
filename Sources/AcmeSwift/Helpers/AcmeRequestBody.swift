@@ -88,33 +88,19 @@ struct AcmeRequestBody<T: EndpointProtocol>: Encodable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         
         let protectedData = try jsonEncoder.encode(self.protected)
-        guard let protectedJson = String(data: protectedData, encoding: .utf8) else {
-            throw AcmeError.jwsEncodeError("Unable to encode AcmeRequestBody.protected as JSON string")
-        }
-        let protectedBase64 = protectedJson.toBase64Url()
+        let protectedJSON = String(decoding: protectedData, as: UTF8.self)
+        let protectedBase64 = protectedJSON.toBase64Url()
         try container.encode(protectedBase64, forKey: .protected)
         
         let payloadData = try jsonEncoder.encode(self.payload)
-        guard let payloadJson = String(data: payloadData, encoding: .utf8) else {
-            throw AcmeError.jwsEncodeError("Unable to encode AcmeRequestBody.payload as JSON string")
-        }
+        let payloadJSON = String(decoding: payloadData, as: UTF8.self)
         
-        let payloadBase64: String!
         // Empty payload is required most of the time for so-called POST-AS-GET ACMEv2 requests.
-        if payloadJson == "\"\"" {
-            payloadBase64 = ""
-        }
-        else {
-            payloadBase64 = payloadJson.toBase64Url()
-        }
+        let payloadBase64 = payloadJSON == "\"\"" ? "" : payloadJSON.toBase64Url()
         try container.encode(payloadBase64, forKey: .payload)
         
-        let signedString = "\(protectedBase64).\(payloadBase64!)"
-        guard let signedData = signedString.data(using: .utf8) else {
-            throw AcmeError.jwsEncodeError("Unable to encode data to sign String as Data")
-        }
-        
-        let signature = try self.privateKey.signature(for: signedData)
+        let signedString = "\(protectedBase64).\(payloadBase64)"
+        let signature = try self.privateKey.signature(for: Data(signedString.utf8))
         let signatureData = signature.rawRepresentation
         
         let signatureBase64 = signatureData.toBase64UrlString()
