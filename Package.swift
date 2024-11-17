@@ -15,7 +15,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.19.0"),
         .package(url: "https://github.com/apple/swift-crypto.git", "2.1.0" ..< "4.0.0"),
-        .package(url: "https://github.com/vapor/jwt-kit.git", from: "4.13.1"),
+        .package(url: "https://github.com/vapor/jwt-kit.git", "4.13.1" ..< "6.0.0"),
         .package(url: "https://github.com/apple/swift-certificates.git", from: "1.2.0"),
         .package(url: "https://github.com/apple/swift-asn1.git", from: "1.1.0")
     ],
