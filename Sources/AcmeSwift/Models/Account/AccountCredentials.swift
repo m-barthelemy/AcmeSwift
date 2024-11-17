@@ -2,8 +2,8 @@ import Foundation
 import Crypto
 
 public struct AccountCredentials {
-    private (set) public var contacts: [String] = []
-    private (set) public var key: Crypto.P256.Signing.PrivateKey
+    private(set) public var contacts: [String] = []
+    private(set) public var key: Crypto.P256.Signing.PrivateKey
     
     public init(contacts: [String], pemKey: String) throws {
         let privateKey = try Crypto.P256.Signing.PrivateKey.init(pemRepresentation: pemKey)
