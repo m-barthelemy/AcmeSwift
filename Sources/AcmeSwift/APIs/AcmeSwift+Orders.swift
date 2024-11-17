@@ -329,14 +329,17 @@ extension AcmeSwift {
                 throw AcmeError.mustBeAuthenticated("\(AcmeSwift.self).init() must be called with an \(AccountCredentials.self)")
             }
             
-            let publicKey = login.key.publicKey.rawRepresentation
-            
+            let pubKey = try JWTKit.ECDSAKey.public(pem: login.key.publicKey.pemRepresentation)
+            guard let parameters = pubKey.parameters else {
+                throw AcmeError.invalidKeyError("Public key parameters are nil")
+            }
+
             let jwk = JWK.ecdsa(
-                nil,
+                .es256,
                 identifier: nil,
-                x: publicKey.prefix(upTo: publicKey.count/2).base64EncodedString(),
-                y: publicKey.suffix(from: publicKey.count/2).base64EncodedString(),
-                curve: nil
+                x: parameters.x,
+                y: parameters.y,
+                curve: .p256
             )
             let encoder = JSONEncoder()
             encoder.outputFormatting = .sortedKeys
