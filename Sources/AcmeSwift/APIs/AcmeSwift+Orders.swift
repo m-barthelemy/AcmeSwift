@@ -233,12 +233,13 @@ extension AcmeSwift {
             var descs: [ChallengeDescription] = []
             for auth in authorizations where auth.status == .pending {
                 for challenge in auth.challenges where (challenge.type == preferring || auth.wildcard == true) && (challenge.status == .pending || challenge.status == .invalid) {
-                    let digest = "\(challenge.token).\(accountThumbprint.base64EncodedString().base64ToBase64Url())"
+                    let digest = "\(challenge.token).\(accountThumbprint.base64URLString)"
+                    
                     if challenge.type == .dns {
                         let challengeDesc = ChallengeDescription(
                             type: challenge.type,
                             endpoint: "_acme-challenge.\(auth.identifier.value)",
-                            value: sha256Digest(data: digest.data(using: .utf8)!).base64EncodedString().base64ToBase64Url(),
+                            value: Crypto.SHA256.hash(data: Array(digest.utf8)).base64URLString,
                             url: challenge.url
                         )
                         descs.append(challengeDesc)
@@ -323,7 +324,7 @@ extension AcmeSwift {
         /// Return the SHA256 digest of the ACMEv2 account public key's JWK JSON.
         ///
         /// This value has to be present in an HTTP challenge value.
-        private func getAccountThumbprint() throws -> Data {
+        private func getAccountThumbprint() throws -> SHA256Digest {
             guard let login = self.client.login else {
                 throw AcmeError.mustBeAuthenticated("\(AcmeSwift.self).init() must be called with an \(AccountCredentials.self)")
             }
@@ -338,18 +339,13 @@ extension AcmeSwift {
             )
             let encoder = JSONEncoder()
             encoder.outputFormatting = .sortedKeys
-            let jwkData = try! encoder.encode(jwk)
-            return sha256Digest(data: jwkData)
+            return Crypto.SHA256.hash(data: try encoder.encode(jwk))
         }
-        
-        private func sha256Digest(data: Data) -> Data {
-            let digest: SHA256Digest = Crypto.SHA256.hash(data: data)
-            let array = digest.compactMap{UInt8($0)}
-            let hashData = Data(array)
-            return hashData
-            /*return String(data: data, encoding: .utf8)!
-            return digest.map { String(format: "%02x", $0) }.joined()*/
-        }
-        
+    }
+}
+
+extension SHA256Digest {
+    var base64URLString: String {
+        Data(self).base64EncodedString().base64ToBase64Url()
     }
 }
