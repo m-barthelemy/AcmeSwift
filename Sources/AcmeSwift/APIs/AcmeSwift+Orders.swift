@@ -334,9 +334,9 @@ extension AcmeSwift {
             let jwk = JWK.ecdsa(
                 nil,
                 identifier: nil,
-                x: publicKey.prefix(upTo: publicKey.count/2).base64EncodedString(),
-                y: publicKey.suffix(from: publicKey.count/2).base64EncodedString(),
-                curve: nil
+                x: publicKey.prefix(publicKey.count/2).toBase64UrlString(),
+                y: publicKey.suffix(publicKey.count/2).toBase64UrlString(),
+                curve: .p256
             )
             let encoder = JSONEncoder()
             encoder.outputFormatting = .sortedKeys
@@ -347,6 +347,6 @@ extension AcmeSwift {
 
 extension SHA256Digest {
     var base64URLString: String {
-        Data(self).base64EncodedString().base64ToBase64Url()
+        Data(self).toBase64UrlString()
     }
 }

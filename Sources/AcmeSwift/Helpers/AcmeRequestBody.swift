@@ -65,12 +65,12 @@ struct AcmeRequestBody<T: EndpointProtocol>: Encodable {
         
         self.protected = .init(
             alg: .es256,
-            jwk: accountURL == nil ? JWTKit.JWK.ecdsa(
+            jwk: accountURL == nil ? JWK.ecdsa(
                 nil,
                 identifier: nil,
-                x: publicKey.prefix(upTo: publicKey.count/2).base64EncodedString(),
-                y: publicKey.suffix(from: publicKey.count/2).base64EncodedString(),
-                curve: nil
+                x: publicKey.prefix(publicKey.count/2).toBase64UrlString(),
+                y: publicKey.suffix(publicKey.count/2).toBase64UrlString(),
+                curve: .p256
             ) : nil,
             kid: accountURL,
             nonce: nonce,
