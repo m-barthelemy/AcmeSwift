@@ -13,7 +13,7 @@ final class AccountTests: XCTestCase {
         self.logger = Logger.init(label: "acme-swift-tests")
         self.logger.logLevel = .trace
         
-        var config = HTTPClient.Configuration(certificateVerification: .fullVerification, backgroundActivityLogger: self.logger)
+        let config = HTTPClient.Configuration(certificateVerification: .fullVerification, backgroundActivityLogger: self.logger)
         self.http = HTTPClient(
             eventLoopGroupProvider: .singleton,
             configuration: config
