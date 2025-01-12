@@ -18,9 +18,6 @@ public struct AcmeAccountInfo: Codable, Sendable {
     /// The contact entries.
     public let contact: [String]
     
-    /// Source IP (as seen by the ACME servers) from which the Account was created.
-    public let initialIp: String
-    
     /// Date when the Account was created.
     public let createdAt: String
     
