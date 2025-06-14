@@ -16,7 +16,11 @@ public struct AcmeAccountInfo: Codable, Sendable {
     internal(set) public var privateKeyPem: String?
     
     /// The contact entries.
-    public let contact: [String]
+    ///
+    /// An array of URLs that the server can use to contact the client for issues related to this account. For example, the server may wish to notify the client about server-initiated revocation or certificate expiration. For information on supported URL schemes, see [Section 7.3](https://datatracker.ietf.org/doc/html/rfc8555#section-7.3).
+    ///
+    /// - SeeAlso: [RFC 8555 Automatic Certificate Management Environment (ACME) §7.1.2. Acount Objects](https://datatracker.ietf.org/doc/html/rfc8555#section-7.1.2)
+    public let contact: [String]?
     
     /// Date when the Account was created.
     public let createdAt: String

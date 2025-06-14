@@ -76,7 +76,7 @@ extension AcmeSwift {
                 throw AcmeError.invalidAccountInfo
             }
             self.client.login = try .init(
-                contacts: account.contact,
+                contacts: account.contact ?? [],
                 pemKey: privateKey
             )
         }
