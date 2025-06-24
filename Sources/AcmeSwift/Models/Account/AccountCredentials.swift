@@ -12,11 +12,6 @@ public struct AccountCredentials {
     
     public init(contacts: [String], key: Crypto.P256.Signing.PrivateKey) {
         self.key = key
-        for var contact in contacts {
-            if contact.firstIndex(of: ":") == nil {
-                contact = "mailto:" + contact
-            }
-            self.contacts.append(contact)
-        }
+        self.contacts = contacts.map { $0.contains(":") ? $0 : "mailto:\($0)" }
     }
 }

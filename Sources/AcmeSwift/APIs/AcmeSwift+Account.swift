@@ -43,13 +43,7 @@ extension AcmeSwift {
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  an `Account` that can be saves for future connections.
         public func create(contacts: [String], acceptTOS: Bool) async throws -> AcmeAccountInfo {
-            var contactsWithURL: [String] = []
-            for var contact in contacts {
-              if contact.firstIndex(of: ":") == nil {
-                contact = "mailto:" + contact
-              }
-              contactsWithURL.append(contact)
-            }
+            let contactsWithSchema = contacts.map { $0.contains(":") ? $0 : "mailto:\($0)" }
             
             // Create private key
             let privateKey = Crypto.P256.Signing.PrivateKey.init(compactRepresentable: true)
@@ -57,7 +51,7 @@ extension AcmeSwift {
             let ep = CreateAccountEndpoint(
                 directory: self.client.directory,
                 spec: .init(
-                    contact: contactsWithURL,
+                    contact: contactsWithSchema,
                     termsOfServiceAgreed: acceptTOS,
                     onlyReturnExisting: false,
                     externalAccountBinding: nil
@@ -76,7 +70,7 @@ extension AcmeSwift {
                 throw AcmeError.invalidAccountInfo
             }
             self.client.login = try .init(
-                contacts: account.contact,
+                contacts: account.contact ?? [],
                 pemKey: privateKey
             )
         }
