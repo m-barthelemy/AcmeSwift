@@ -59,6 +59,9 @@ public struct AcmeAuthorization: Codable, Sendable {
 
             /// A TLS-ALPN-01 challenge.
             case alpn = "tls-alpn-01"
+
+            /// A device attestation challenge, see  https://datatracker.ietf.org/doc/draft-acme-device-attest/
+            case deviceAttest = "device-attest-01"
         }
         
         public enum ChallengeStatus: String, Codable, Sendable {

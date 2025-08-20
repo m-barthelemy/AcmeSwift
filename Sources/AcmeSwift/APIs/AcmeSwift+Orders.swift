@@ -85,7 +85,41 @@ extension AcmeSwift {
             info.url = URL(string: headers["Location"].first ?? "")
             return info
         }
-        
+
+        /// Creates an Order for obtaining a new certificate.
+        /// - Parameters:
+        ///   - permanentIdentifier: The hardware permanent identifier for which we want to create a certificate. Example: `"123456789" or "urn:ek:sha256:p4y5IVB2fMIpdusxon+MUwYU4o/7/tgvKB9fyu8Idko="`.
+        ///   - notBefore: Minimum Date when the future certificate will start being valid. **Note:** Let's Encrypt does not support setting this.
+        ///   - notAfter: Desired expiration date of the future certificate. **Note:** Let's Encrypt does not support setting this.
+        /// - Throws: Errors that can occur when executing the request.
+        /// - Returns: Returns  the `Account`.
+        public func create(permanentIdentifier: String, notBefore: Date? = nil, notAfter: Date? = nil) async throws -> AcmeOrderInfo {
+            try await self.client.ensureLoggedIn()
+
+            var identifiers: [AcmeOrderSpec.Identifier] = []
+            identifiers.append(.init(type: .permanentIdentifier, value: permanentIdentifier))
+            let ep = CreateOrderEndpoint(
+                directory: self.client.directory,
+                spec: .init(
+                    identifiers: identifiers,
+                    notBefore: notBefore,
+                    notAfter: notAfter
+                )
+            )
+
+            var (info, headers) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
+            info.url = URL(string: headers["Location"].first ?? "")
+            return info
+        }
+
+        /// Creates the attestation payload used device-attest-01 challenges
+        /// - Parameters:
+        ///   - attObj: the base64url string with the WebAuthn attestation object.
+        /// - Returns: returns the `AcmeAttestationSpec`.
+        public func createAttestationPayload(attObj: String) -> AcmeAttestationSpec {
+            return AcmeAttestationSpec(attObj: attObj)
+        }
+
         /// Finalizes an Order and send the CSR.
         /// - Parameters:
         ///   - order: The `AcmeOrderInfo` returned by the call to `.create()`.
@@ -252,6 +286,14 @@ extension AcmeSwift {
                             url: challenge.url
                         )
                         descs.append(challengeDesc)
+                    } else if challenge.type == .deviceAttest {
+                        let challengeDesc = ChallengeDescription(
+                            type: challenge.type,
+                            endpoint: "",
+                            value: digest,
+                            url: challenge.url
+                        )
+                        descs.append(challengeDesc)
                     }
                 }
             }
@@ -272,12 +314,16 @@ extension AcmeSwift {
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  a list of `AcmeAuthorization` containing the challenges that were not validated yet and may be in the process of being validated, or have failed.
         @discardableResult
-        public func validateChallenges(from order: AcmeOrderInfo, preferring: AcmeAuthorization.Challenge.ChallengeType) async throws -> [AcmeAuthorization.Challenge] {
+        public func validateChallenges(from order: AcmeOrderInfo, preferring: AcmeAuthorization.Challenge.ChallengeType, payload: Codable? = nil) async throws -> [AcmeAuthorization.Challenge] {
             // get pending challenges
             let pendingChallenges = try await describePendingChallenges(from: order, preferring: preferring)
             var updatedChallenges: [AcmeAuthorization.Challenge] = []
             for challengeDesc in pendingChallenges {
-                updatedChallenges.append(try await validateChallenge(url: challengeDesc.url))
+                if challengeDesc.type == .deviceAttest {
+                    updatedChallenges.append(try await validateAttestationChallenge(url: challengeDesc.url, payload: payload as! AcmeAttestationSpec))
+                } else {
+                    updatedChallenges.append(try await validateChallenge(url: challengeDesc.url))
+                }
             }
             return updatedChallenges
         }
@@ -320,7 +366,15 @@ extension AcmeSwift {
             let (updatedChallenge, _) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
             return updatedChallenge
         }
-        
+
+        private func validateAttestationChallenge(url: URL, payload: AcmeAttestationSpec) async throws -> AcmeAuthorization.Challenge {
+            try await self.client.ensureLoggedIn()
+
+            let ep = ValidateAttestationChallengeEndpoint(challengeURL: url, spec: payload)
+            let (updatedChallenge, _) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
+            return updatedChallenge
+        }
+
         /// Return the SHA256 digest of the ACMEv2 account public key's JWK JSON.
         ///
         /// This value has to be present in an HTTP challenge value.

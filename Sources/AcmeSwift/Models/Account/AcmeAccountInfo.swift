@@ -10,7 +10,7 @@ public struct AcmeAccountInfo: Codable, Sendable {
     internal(set) public var url: URL?
     
     /// Information about the Account public key in JWK format.
-    public let key: JWK
+    public let key: JWK?
     
     /// The PEM representation of the private key for this Account.
     internal(set) public var privateKeyPem: String?
@@ -23,7 +23,7 @@ public struct AcmeAccountInfo: Codable, Sendable {
     public let contact: [String]?
     
     /// Date when the Account was created.
-    public let createdAt: String
+    public let createdAt: String?
     
     /// Current status of the Account.
     public let status: Status
