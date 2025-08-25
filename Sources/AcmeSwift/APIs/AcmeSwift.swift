@@ -66,6 +66,16 @@ public class AcmeSwift {
             self.accountURL = info.url
         }
     }
+
+    /// Returns the host header for the given URL, including port if not default.
+    internal func getHostHeader(url: URL) -> String {
+        var host = url.host ?? "localhost"
+        if let port = url.port, port != 443 {
+            host += ":\(port)"
+        }
+        return host
+    }
+
     /// Executes a request to a specific endpoint. The `Endpoint` struct provides all necessary data and parameters for the request.
     /// - Parameter endpoint: `Endpoint` instance with all necessary data and parameters.
     /// - Throws: It can throw an error when encoding the body of the `Endpoint` request to JSON.
@@ -75,7 +85,7 @@ public class AcmeSwift {
         logger.debug("\(Self.self) execute Endpoint \(T.self): \(endpoint.method) \(endpoint.url)")
         
         var finalHeaders: HTTPHeaders = .init()
-        finalHeaders.add(name: "Host", value: endpoint.url.host ?? "localhost")
+        finalHeaders.add(name: "Host", value: getHostHeader(url: endpoint.url))
         finalHeaders.add(contentsOf: self.headers)
         if let additionalHeaders = endpoint.headers {
             finalHeaders.add(contentsOf: additionalHeaders)
