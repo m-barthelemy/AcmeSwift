@@ -33,7 +33,7 @@ struct AcmeDA: AsyncParsableCommand {
 
             After configuring "step-ca" the first thing that we need is to create a key in
             one of the YubiKey slots. We're picking 82 in this example. To do this, we will
-            use "step" [2] with the "step-kms-plugin" [2], and we will run the following:
+            use "step" [2] with the "step-kms-plugin" [3], and we will run the following:
 
             step kms create "yubikey:slot-id=82?pin-value=123456"
 
