@@ -24,6 +24,7 @@ public struct AcmeOrderSpec: Codable, Sendable {
         
         public enum IdentifierType: String, Codable, Sendable {
             case dns
+            case permanentIdentifier = "permanent-identifier"
         }
     }
 }

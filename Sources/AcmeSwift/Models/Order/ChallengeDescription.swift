@@ -11,6 +11,7 @@ public struct ChallengeDescription: Codable, Sendable {
     
     /// For a DNS challenge, the **TXT** record value.
     /// For an HTTP challenge, the exact value that the `endpoint` must return over HTTP on port 80.
+    /// For a device-attest-01 challenge, the data to be signed.
     public let value: String
     
     /// The ACMEv2 server URL for validating this challenge.
