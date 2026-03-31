@@ -41,9 +41,14 @@ public struct AcmeAuthorization: Codable, Sendable {
         /// The status of this challenge
         public let status: ChallengeStatus
         
-        
-        public let token: String
-        
+        /// A random value that uniquely identifies the challenge
+        public let token: String?
+
+        /// A URI identifying the ACME account requesting validation.
+        internal let accountURI: URL?
+
+        internal let issuerDomainNames: [String]?
+
         /// The time at which the server validated this challenge.
         public let validated: Date?
         
@@ -62,6 +67,9 @@ public struct AcmeAuthorization: Codable, Sendable {
 
             /// A device attestation challenge, see  https://datatracker.ietf.org/doc/draft-acme-device-attest/
             case deviceAttest = "device-attest-01"
+
+            /// A DNS challenge requiring the creation of persistent TXT records to prove ownership of a domain or record.
+            case dnsPersist = "dns-persist-01"
         }
         
         public enum ChallengeStatus: String, Codable, Sendable {
@@ -70,5 +78,18 @@ public struct AcmeAuthorization: Codable, Sendable {
             case valid
             case invalid
         }
+    }
+}
+
+extension AcmeAuthorization.Challenge {
+    enum CodingKeys: String, CodingKey {
+        case url
+        case type
+        case status
+        case token
+        case accountURI = "accounturi"
+        case issuerDomainNames = "issuer-domain-names"
+        case validated
+        case error
     }
 }

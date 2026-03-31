@@ -24,6 +24,11 @@ public enum AcmeError: Error, Sendable {
     case noResourceUrl
 
     case noDomains(String)
+
+    case unsupportedChallenge(type: AcmeAuthorization.Challenge.ChallengeType)
+
+    /// Challenge requires a token but server didn't set any
+    case missingChallengeToken
 }
 
 public struct AcmeResponseError: Codable, Error, Sendable {

@@ -1,5 +1,4 @@
 import Foundation
-import Crypto
 
 extension AcmeSwift {
     /// APIs related to ACMEv2 certificates management.

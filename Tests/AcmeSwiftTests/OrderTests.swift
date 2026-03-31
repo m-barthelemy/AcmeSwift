@@ -84,27 +84,30 @@ final class OrderTests: XCTestCase {
         do {
             var order = try await acme.orders.create(domains: domains)
             //try await Task.sleep(nanoseconds: 60_000_000_000)
-            for desc in try await acme.orders.describePendingChallenges(from: order, preferring: .dns) {
+            for desc in try await acme.orders.describePendingChallenges(from: order, preferring: .dnsPersist) {
                 if desc.type == .http {
-                    print("\n • The URL \(desc.endpoint) needs to return \(desc.value)")
+                    logger.info("\n • The URL \(desc.endpoint) needs to return \(desc.value)")
                 }
                 else if desc.type == .dns {
-                    print("\n • Create the following DNS record: \(desc.endpoint) TXT \(desc.value)")
+                    logger.info("\n • Create the following DNS record: \(desc.endpoint) TXT \(desc.value)")
+                }
+                else if desc.type == .dnsPersist {
+                    logger.info("\n • Create the following DNS Persistent record: \(desc.endpoint) TXT \(desc.value)")
                 }
             }
-            print("\n =====> CREATE DNS CHALLENGES!!\n")
-            
-            try await Task.sleep(for: .seconds(20))
+            logger.info("\n =====> CREATE DNS CHALLENGES!!\n")
+
+            try await Task.sleep(for: .seconds(30))
             
             let failed = try await acme.orders.validateChallenges(from: order, preferring: .dns)
             guard failed.count == 0 else {
                 fatalError("Some validations failed! \(failed)")
             }
             try await acme.orders.refresh(&order)
-            print("\n => order: \(toJson(order))")
+            logger.info("\n => order: \(toJson(order))")
 
-            let (key, _, finalized) = try await acme.orders.finalizeWithEcdsa(order: order, domains: domains)
-            let certs = try await acme.certificates.download(for: finalized)
+            let (key, finalizedOrder) = try await acme.orders.finalize(order: order, type: .ecdsa())
+            let certs = try await acme.certificates.download(for: finalizedOrder)
             try certs.joined(separator: "\n").write(to: URL(fileURLWithPath: "cert.pem"), atomically: true, encoding: .utf8)
             
             try key.serializeAsPEM().pemString.write(to: URL(fileURLWithPath: "key.pem"), atomically: true, encoding: .utf8)
