@@ -9,7 +9,7 @@ It fully uses the Swift concurrency features introduced with Swift 5.5 (`async`/
 
 ## Note
 This library doesn't handle any ACME challenge at all by itself.
-Publishing the challenge, either by creating DNS record or exposing the value over HTTP, is your full responsibility. 
+Publishing the challenge, either by creating DNS record or exposing the value over HTTP, is out of scope. 
 
 
 ## Installation
@@ -169,9 +169,10 @@ let finalizedOrder = try await acme.orders.finalize(order: order, withPemCsr: ".
 If you want AcmeSwift to generate one for you:
 ```swift
 // ECDSA key and certificate
-let (privateKey, csr, finalizedOrder) = try await acme.orders.finalizeWithEcdsa(order: order, domains: ["mydomain.com", "www.mydomain.com"])
+let (key, finalizedOrder) = try await acme.orders.finalize(order: order) // Defaults to ECDSA P-384
+let (key, finalizedOrder) = try await acme.orders.finalize(order: order, type: .ecdsa(.p256)) // Custom: ECDSA P-256
 // .. or, good old RSA
-let (privateKey, csr, finalizedOrder) = try await acme.orders.finalizeWithRsa(order: order, domains: ["mydomain.com", "www.mydomain.com"])
+let (key, finalizedOrder) = try await acme.orders.finalize(order: order, type: .rsa(.`2048`))
 
 // You can access the private key used to generate the CSR (and to use once you get the certificate)
 print("\n• Private key: \(try privateKey.serializeAsPEM().pemString)")

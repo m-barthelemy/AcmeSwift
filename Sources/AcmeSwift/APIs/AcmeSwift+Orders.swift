@@ -142,7 +142,7 @@ extension AcmeSwift {
         /// - Parameters:
         ///   - order: The `AcmeOrderInfo` returned by the call to `.create()`.
         ///   - subject: Subject of certificate.
-        ///   - type: The type of the private key and certificate. Default: `.ecdsa(.secp384r1)` (ECDSA P-384).
+        ///   - type: The type of the private key and certificate. Default: `.ecdsa(.p384)` (ECDSA P-384).
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  `Certificate.PrivateKey` and the finalized  `AcmeOrderInfo`.
         public func finalize(order: AcmeOrderInfo, subject: String? = nil, type: KeyType = .ecdsa()) async throws -> (Certificate.PrivateKey, AcmeOrderInfo) {
@@ -157,13 +157,13 @@ extension AcmeSwift {
             switch type {
             case .ecdsa(let alg):
                 switch alg {
-                case .secp256r1:
+                case .p256:
                     privateKey = .init(P256.Signing.PrivateKey())
                     signatureAlg = .ecdsaWithSHA256
-                case .secp384r1:
+                case .p384:
                     privateKey = .init(P384.Signing.PrivateKey())
                     signatureAlg = .ecdsaWithSHA384
-                case .secp521r1:
+                case .p521:
                     privateKey = .init(P521.Signing.PrivateKey())
                     signatureAlg = .ecdsaWithSHA512 // ?
                 }
@@ -429,7 +429,7 @@ extension AcmeSwift {
 
     public enum KeyType: Sendable {
         case rsa(_ bits: RSABits = .`2048`)
-        case ecdsa(_ bits: ECCBits = .secp384r1)
+        case ecdsa(_ bits: ECCBits = .p384)
 
         public enum RSABits: Sendable {
             case `2048`
@@ -438,10 +438,10 @@ extension AcmeSwift {
         }
 
         public enum ECCBits: Sendable {
-            case secp256r1
-            case secp384r1
+            case p256
+            case p384
             /// This may not be supported by all CAs.
-            case secp521r1
+            case p521
         }
     }
 }
