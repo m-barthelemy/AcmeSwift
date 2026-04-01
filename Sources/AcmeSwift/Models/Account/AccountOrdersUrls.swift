@@ -1,5 +1,7 @@
 import Foundation
 
-struct AccountOrdersUrls: Codable {
+struct AccountOrdersUrls {
     public let orders: [URL]
 }
+
+extension AccountOrdersUrls: Codable{}

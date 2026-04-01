@@ -31,7 +31,7 @@ public enum AcmeError: Error, Sendable {
     case missingChallengeToken
 }
 
-public struct AcmeResponseError: Codable, Error, Sendable {
+public struct AcmeResponseError: Error, Sendable {
     public let type: AcmeErrorType
     
     public let title: String?
@@ -44,7 +44,7 @@ public struct AcmeResponseError: Codable, Error, Sendable {
     
     public let subproblems: [AcmeResponseError]?
     
-    public enum AcmeErrorType: String, Codable, Error, Sendable {
+    public enum AcmeErrorType: String, Error, Sendable {
         /// The request message was malformed
         case malformed = "urn:ietf:params:acme:error:malformed"
         
@@ -127,3 +127,7 @@ public struct AcmeResponseError: Codable, Error, Sendable {
         public let value: String
     }
 }
+
+extension AcmeError: Codable{}
+extension AcmeResponseError: Codable {}
+extension AcmeResponseError.AcmeErrorType: Codable{}

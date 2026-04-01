@@ -1,7 +1,7 @@
 import Foundation
 
 /// The Directory endpoint of the ACMEv2 service, providing discovery information about various endpoints
-public struct AcmeDirectory: Codable, Sendable {
+public struct AcmeDirectory: Sendable {
     public let newAuthz: URL?
     public let newNonce: URL
     
@@ -25,3 +25,5 @@ public struct AcmeDirectory: Codable, Sendable {
         public let externalAccountRequired: Bool?
     }
 }
+
+extension AcmeDirectory: Codable{}

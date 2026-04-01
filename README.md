@@ -199,7 +199,7 @@ for var cert in certs {
 }
 ```
 
-This return a list of PEM-encoded certificates. The first item is the actual certificate for the requested domains.
+This return a list of PEM-encoded certificates. The first item is the actual, leaf certificate for the requested domains.
 The following items are the other certificates required to establish the full certification chain (issuing CA, root CA...).
 
 The order of the items in the list is directly compatible with the way SwiftNIO and Nginx expects them; you can concatenate all the items into a single file and pass this file to the `ssl_certificate` directive:

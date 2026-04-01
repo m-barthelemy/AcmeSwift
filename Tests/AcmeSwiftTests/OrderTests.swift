@@ -86,25 +86,30 @@ final class OrderTests: XCTestCase {
             //try await Task.sleep(nanoseconds: 60_000_000_000)
             for desc in try await acme.orders.describePendingChallenges(from: order, preferring: .dnsPersist) {
                 if desc.type == .http {
-                    logger.info("\n • The URL \(desc.endpoint) needs to return \(desc.value)")
+                    logger.info(" • The URL \(desc.endpoint) needs to return \(desc.value)")
                 }
                 else if desc.type == .dns {
-                    logger.info("\n • Create the following DNS record: \(desc.endpoint) TXT \(desc.value)")
+                    logger.info(" • Create the following DNS record: \(desc.endpoint) TXT \(desc.value)")
                 }
                 else if desc.type == .dnsPersist {
-                    logger.info("\n • Create the following DNS Persistent record: \(desc.endpoint) TXT \(desc.value)")
+                    logger.info(" • Create the following DNS Persistent record: \(desc.endpoint) TXT \(desc.value)")
                 }
             }
-            logger.info("\n =====> CREATE DNS CHALLENGES!!\n")
+            logger.info("=====> CREATE DNS CHALLENGES!!")
+            try await Task.sleep(for: .seconds(10))
 
-            try await Task.sleep(for: .seconds(30))
-            
-            let failed = try await acme.orders.validateChallenges(from: order, preferring: .dns)
-            guard failed.count == 0 else {
-                fatalError("Some validations failed! \(failed)")
+            var remainingChallenges = try await acme.orders.validateChallenges(from: order, preferring: .dnsPersist)
+            for timeout in [5, 10, 10, 10, 30] {
+                guard !remainingChallenges.isEmpty else { break }
+                try await Task.sleep(for: .seconds(timeout))
+                remainingChallenges = try await acme.orders.validateChallenges(from: order, preferring: .dnsPersist)
+            }
+            // Give up if we still haven't satisfied the request:
+            guard remainingChallenges.isEmpty else {
+                fatalError("Some validations failed! \(remainingChallenges)")
             }
             try await acme.orders.refresh(&order)
-            logger.info("\n => order: \(toJson(order))")
+            logger.debug("Order: \(toJson(order))")
 
             let (key, finalizedOrder) = try await acme.orders.finalize(order: order, type: .ecdsa())
             let certs = try await acme.certificates.download(for: finalizedOrder)

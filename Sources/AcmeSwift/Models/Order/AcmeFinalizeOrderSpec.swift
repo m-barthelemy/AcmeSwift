@@ -1,6 +1,6 @@
 import Foundation
 
-struct AcmeFinalizeOrderSpec: Codable {
+struct AcmeFinalizeOrderSpec {
     init(csr: String) {
         self.csr = csr
     }
@@ -10,3 +10,5 @@ struct AcmeFinalizeOrderSpec: Codable {
     /// Note: Because this field uses base64url, and does not include headers, it is different from PEM.
     var csr: String
 }
+
+extension AcmeFinalizeOrderSpec: Codable{}
