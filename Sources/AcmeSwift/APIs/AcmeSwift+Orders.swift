@@ -307,7 +307,7 @@ extension AcmeSwift {
                     // needed to create a suitable DNS TXT record.
                     case .dnsPersist:
                         // TODO: remove ! and add required `guard` and AcmeError stuff
-                        var digest = "\(challenge.issuerDomainNames!.first!); accounturi=\(challenge.accountURI!)"
+                        var digest = "\(challenge.issuerDomainNames!.first!); accounturi=\(client.accountURL!)"
                         if let isWildcard = auth.wildcard, isWildcard {
                             digest += "; policy=wildcard"
                         }
@@ -438,9 +438,12 @@ extension AcmeSwift {
         }
 
         public enum ECCBits: Sendable {
+            /// secp256r1 or prime256v1
             case p256
+            /// secp384r1 or prime384v1
             case p384
-            /// This may not be supported by all CAs.
+            /// secp521r1 or prime521v1.
+            /// May not be supported by all CAs.
             case p521
         }
     }
