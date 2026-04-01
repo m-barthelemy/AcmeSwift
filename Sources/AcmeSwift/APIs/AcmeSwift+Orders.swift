@@ -125,7 +125,7 @@ extension AcmeSwift {
         ///   - order: The `AcmeOrderInfo` returned by the call to `.create()`.
         ///   - withPemCsr: The CSR (Certificate Signing Request) **in PEM format**.
         /// - Throws: Errors that can occur when executing the request.
-        /// - Returns: Returns  the `Account`.
+        /// - Returns: Returns  the finalized `AcmeOrderInfo`.
         public func finalize(order: AcmeOrderInfo, withPemCsr: String) async throws -> AcmeOrderInfo {
             try await self.client.ensureLoggedIn()
             
@@ -144,7 +144,7 @@ extension AcmeSwift {
         ///   - subject: Subject of certificate.
         ///   - type: The type of the private key and certificate. Default: `.ecdsa(.p384)` (ECDSA P-384).
         /// - Throws: Errors that can occur when executing the request.
-        /// - Returns: Returns  `Certificate.PrivateKey` and the finalized  `AcmeOrderInfo`.
+        /// - Returns: Returns  `Certificate.PrivateKey` and the finalized `AcmeOrderInfo`.
         public func finalize(order: AcmeOrderInfo, subject: String? = nil, type: KeyType = .ecdsa()) async throws -> (Certificate.PrivateKey, AcmeOrderInfo) {
             try await self.client.ensureLoggedIn()
 
@@ -210,7 +210,7 @@ extension AcmeSwift {
         ///   - order: The `AcmeOrderInfo` returned by the call to `.create()`.
         ///   - withCsr: An instance of a `CertificateSigningRequest`.
         /// - Throws: Errors that can occur when executing the request.
-        /// - Returns: Returns  the `Account`.
+        /// - Returns: Returns  the finalized `AcmeOrderInfo`.
         public func finalize(order: AcmeOrderInfo, withCsr csr: CertificateSigningRequest) async throws -> AcmeOrderInfo {
             try await self.client.ensureLoggedIn()
 

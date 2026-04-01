@@ -2,14 +2,14 @@
 [![Language](https://img.shields.io/badge/Swift-5.5-brightgreen.svg)](http://swift.org)
 [![Platforms](https://img.shields.io/badge/platform-linux--64%20%7C%20osx--64-blue)]()
 
-This is an ACME v2 client written in Swift. 
+This is an ACME v2 client written in Swift.
 
 It fully uses the Swift concurrency features introduced with Swift 5.5 (`async`/`await`).
 
 
 ## Note
-This library doesn't handle any ACME challenge at all by itself.
-Publishing the challenge, either by creating DNS record or exposing the value over HTTP, is out of scope. 
+- This library doesn't handle any ACME challenge at all by itself. Publishing the challenge, either by creating DNS record or exposing the value over HTTP, is out of scope. 
+- It's currently tested with Let's Encrypt. While it may work with other certificate authorities, there is currently no support for External Account Binding (EAB) which is required by some of them. 
 
 
 ## Installation
@@ -19,7 +19,7 @@ import PackageDescription
 let package = Package(
     dependencies: [
         ...
-        .package(url: "https://github.com/m-barthelemy/AcmeSwift.git", from: "1.0.0-beta3"),
+        .package(url: "https://github.com/m-barthelemy/AcmeSwift.git", from: "2.0.0"),
     ],
     targets: [
         .target(name: "App", dependencies: [
@@ -66,7 +66,6 @@ For example, you can encode it to JSON, save it somewhere and then decode it in 
 > [!WARNING]
 > This Account information contains a private key and as such, **must** be stored securely.
 > This is especially important if you are using [`dns-persist-01`](https://letsencrypt.org/2026/02/18/dns-persist-01#dns-persist-01-authorizes-persistently) challenges, who can grant permanent permissions to generate certificates for a given DNS record or even a whole domain to your ACME account.
-
 
 <br/>
 
