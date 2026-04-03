@@ -56,4 +56,4 @@ public struct AcmeOrderInfo: Sendable {
     }
 }
 
-extension AcmeOrderInfo: Codable{}
+extension AcmeOrderInfo: Codable {}
