@@ -28,4 +28,4 @@ public struct AcmeOrderSpec: Sendable {
     }
 }
 
-extension AcmeOrderSpec: Codable{}
+extension AcmeOrderSpec: Codable {}
