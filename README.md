@@ -120,7 +120,7 @@ try await acme.orders.refresh(&order)
 Create an Order for a new certificate:
 ```swift
  
-let order = try await acme.orders.create(domains: ["mydomain.com", "www.mydomain.com"])
+var order = try await acme.orders.create(domains: ["mydomain.com", "www.mydomain.com"])
 ```
 
 <br/>
@@ -161,17 +161,17 @@ Once all the authorizations/challenges are valid, we can finalize the Order by s
 
 If you already have a CSR:
 ```swift
-let finalizedOrder = try await acme.orders.finalize(order: order, withPemCsr: "...")
+try await acme.orders.finalize(order: &order, withPemCsr: "...")
 ```
 
 
-If you want AcmeSwift to generate one for you:
+If you want AcmeSwift to generate a private key and CSR for you:
 ```swift
 // ECDSA key and certificate
-let (key, finalizedOrder) = try await acme.orders.finalize(order: order) // Defaults to ECDSA P-384
-let (key, finalizedOrder) = try await acme.orders.finalize(order: order, type: .ecdsa(.p256)) // Custom: ECDSA P-256
+let key = try await acme.orders.finalize(order: &order) // Defaults to ECDSA P-384
+let key = try await acme.orders.finalize(order: &order, type: .ecdsa(.p256)) // Custom: ECDSA P-256
 // .. or, good old RSA
-let (key, finalizedOrder) = try await acme.orders.finalize(order: order, type: .rsa(.`2048`))
+let key = try await acme.orders.finalize(order: &order, type: .rsa(.`2048`))
 
 // You can access the private key used to generate the CSR (and to use once you get the certificate)
 print("\n• Private key: \(try privateKey.serializeAsPEM().pemString)")
@@ -269,7 +269,7 @@ try acme.account.use(credentials)
 let domains: [String] = ["*.ponies.com", "ponies.com"]
 
 // Create a certificate order for *.ponies.com
-let order = try await acme.orders.create(domains: domains)
+var order = try await acme.orders.create(domains: domains)
 
 // ... after that, now we can fetch the challenges we need to complete
 for desc in try await acme.orders.describePendingChallenges(from: order, preferring: .dns) {
@@ -302,7 +302,7 @@ guard remainingChallenges.isEmpty else {
 
 // Let's create a private key, a CSR and send it all at once.
 // If the validation didn't throw any error, we can now send our Certificate Signing Request...
-let (key, finalizedOrder) = try await acme.orders.finalize(order: order, type: .ecdsa())
+let key = try await acme.orders.finalize(order: &order, type: .ecdsa())
 
 // ... and the certificate is ready to download!
 let certs = try await acme.certificates.download(for: finalizedOrder)

@@ -162,8 +162,8 @@ struct AcmeDA: AsyncParsableCommand {
         }
         try await acme.orders.refresh(&order)
 
-        let info = try await acme.orders.finalize(order: order, withCsr: csr)
-        let certs = try await acme.certificates.download(for: info)
+        try await acme.orders.finalize(order: &order, withCsr: csr)
+        let certs = try await acme.certificates.download(for: order)
         print()
         for crt in certs {
             print(crt)

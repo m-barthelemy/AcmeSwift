@@ -45,6 +45,8 @@ public struct AcmeAuthorization: Sendable {
         public let token: String?
 
         /// A URI identifying the ACME account requesting validation.
+        /// NOTE: latest RFC draft (https://www.ietf.org/archive/id/draft-ietf-acme-dns-persist-01.html#name-challenge-object)
+        /// says this is a required field, but Let's Encrypt does not currently set it.
         internal let accountURI: URL?
 
         internal let issuerDomainNames: [String]?

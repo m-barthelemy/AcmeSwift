@@ -79,8 +79,8 @@ final class OrderTests: XCTestCase {
         defer {try? acme.syncShutdown()}
         
         try acme.account.use(login)
-        let domains = ["www.nuw.run"]
-        
+        let domains = ["acmeswift-tests2.nuw.run"]
+
         do {
             var order = try await acme.orders.create(domains: domains)
             //try await Task.sleep(nanoseconds: 60_000_000_000)
@@ -99,7 +99,7 @@ final class OrderTests: XCTestCase {
             try await Task.sleep(for: .seconds(10))
 
             var remainingChallenges = try await acme.orders.validateChallenges(from: order, preferring: .dnsPersist)
-            for timeout in [5, 10, 10, 10, 30] {
+            for timeout in [5, 10, 10, 10, 10, 30] {
                 guard !remainingChallenges.isEmpty else { break }
                 try await Task.sleep(for: .seconds(timeout))
                 remainingChallenges = try await acme.orders.validateChallenges(from: order, preferring: .dnsPersist)
@@ -108,11 +108,11 @@ final class OrderTests: XCTestCase {
             guard remainingChallenges.isEmpty else {
                 fatalError("Some validations failed! \(remainingChallenges)")
             }
-            try await acme.orders.refresh(&order)
             logger.debug("Order: \(toJson(order))")
 
-            let (key, finalizedOrder) = try await acme.orders.finalize(order: order, type: .ecdsa())
-            let certs = try await acme.certificates.download(for: finalizedOrder)
+            let key = try await acme.orders.finalize(order: &order, type: .ecdsa(.p256))
+            logger.info("Certificate ready for download!")
+            let certs = try await acme.certificates.download(for: order)
             try certs.joined(separator: "\n").write(to: URL(fileURLWithPath: "cert.pem"), atomically: true, encoding: .utf8)
             
             try key.serializeAsPEM().pemString.write(to: URL(fileURLWithPath: "key.pem"), atomically: true, encoding: .utf8)
@@ -129,5 +129,4 @@ final class OrderTests: XCTestCase {
         let data = try! encoder.encode(value)
         return String(decoding: data, as: UTF8.self)
     }
-    
 }

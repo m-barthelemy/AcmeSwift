@@ -40,8 +40,8 @@ extension AcmeSwift {
             try await self.client.ensureLoggedIn()
 
             let ep = GetOrderEndpoint(url: url)
-            var (info, headers) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
-            info.url = URL(string: headers["Location"].first ?? "")
+            var (info, _) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
+            info.url = url
             return info
         }
         
@@ -55,6 +55,7 @@ extension AcmeSwift {
                 throw AcmeError.noResourceUrl
             }
             order = try await get(url: url)
+            order.url = url
         }
         
         
@@ -120,33 +121,14 @@ extension AcmeSwift {
             return AcmeAttestationSpec(attObj: attObj)
         }
 
-        /// Finalizes an Order and send the CSR.
-        /// - Parameters:
-        ///   - order: The `AcmeOrderInfo` returned by the call to `.create()`.
-        ///   - withPemCsr: The CSR (Certificate Signing Request) **in PEM format**.
-        /// - Throws: Errors that can occur when executing the request.
-        /// - Returns: Returns  the finalized `AcmeOrderInfo`.
-        public func finalize(order: AcmeOrderInfo, withPemCsr: String) async throws -> AcmeOrderInfo {
-            try await self.client.ensureLoggedIn()
-            
-            let csrBytes = withPemCsr.pemToData()
-            let pemStr = csrBytes.toBase64UrlString()
-            let ep = FinalizeOrderEndpoint(orderURL: order.finalize, spec: .init(csr: pemStr))
-            
-            let (info, _) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
-            return info
-        }
-
-
         /// Finalizes an Order, and generates a private key and CSR.
         /// - Parameters:
         ///   - order: The `AcmeOrderInfo` returned by the call to `.create()`.
         ///   - subject: Subject of certificate.
         ///   - type: The type of the private key and certificate. Default: `.ecdsa(.p384)` (ECDSA P-384).
         /// - Throws: Errors that can occur when executing the request.
-        /// - Returns: Returns  `Certificate.PrivateKey` and the finalized `AcmeOrderInfo`.
-        public func finalize(order: AcmeOrderInfo, subject: String? = nil, type: KeyType = .ecdsa()) async throws -> (Certificate.PrivateKey, AcmeOrderInfo) {
-            try await self.client.ensureLoggedIn()
+        /// - Returns: Returns the automatically generated `Certificate.PrivateKey`.
+        public func finalize(order: inout AcmeOrderInfo, subject: String? = nil, type: KeyType = .ecdsa()) async throws -> Certificate.PrivateKey {
 
             guard order.identifiers.count > 0 else {
                 throw AcmeError.noDomains("At least 1 DNS name is required")
@@ -199,9 +181,8 @@ extension AcmeSwift {
                 signatureAlgorithm: signatureAlg
             )
 
-            let account = try await finalize(order: order, withCsr: csr)
-
-            return (privateKey, account)
+            try await finalize(order: &order, withCsr: csr)
+            return privateKey
         }
 
         
@@ -210,21 +191,24 @@ extension AcmeSwift {
         ///   - order: The `AcmeOrderInfo` returned by the call to `.create()`.
         ///   - withCsr: An instance of a `CertificateSigningRequest`.
         /// - Throws: Errors that can occur when executing the request.
-        /// - Returns: Returns  the finalized `AcmeOrderInfo`.
-        public func finalize(order: AcmeOrderInfo, withCsr csr: CertificateSigningRequest) async throws -> AcmeOrderInfo {
-            try await self.client.ensureLoggedIn()
-
+        public func finalize(order: inout AcmeOrderInfo, withCsr csr: CertificateSigningRequest) async throws {
             var serializer = DER.Serializer()
             try serializer.serialize(csr)
 
             let csrBytes = Data(serializer.serializedBytes)
-            let pemStr = csrBytes.toBase64UrlString()
-            let ep = FinalizeOrderEndpoint(orderURL: order.finalize, spec: .init(csr: pemStr))
-            
-            let (info, _) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
-            return info
+            try await finalize(order: &order, csrBytes: csrBytes)
         }
-        
+
+        /// Finalizes an Order and send the CSR.
+        /// - Parameters:
+        ///   - order: The `AcmeOrderInfo` returned by the call to `.create()`.
+        ///   - withPemCsr: The CSR (Certificate Signing Request) **in PEM format**.
+        /// - Throws: Errors that can occur when executing the request.
+        public func finalize(order: inout AcmeOrderInfo, withPemCsr: String) async throws {
+            let csrBytes = withPemCsr.pemToData()
+            try await finalize(order: &order, csrBytes: csrBytes)
+        }
+
         /// Get the authorizations containing the challenges for this Order.
         /// - Parameters:
         ///   - from: The `AcmeOrderInfo` representing the certificates Order.
@@ -366,28 +350,6 @@ extension AcmeSwift {
             return updatedChallenge
         }
         
-        
-        /// Poll ACMEv2 provider for order status and return when challenges have been processed.
-        /// - Parameters:
-        ///   - for: The `AcmeOrderInfo` representing the certificates Order.
-        ///   - timeout: Your preferred challenge validation method. Note: when requesting a wildcard certificate, a challenge will have to be published over DNS regardless of your preferred method..
-        /// - Throws: Errors that can occur when executing the request.
-        /// - Returns: Returns a list of `AcmeAuthorization` that are not is a `valid` status.
-        /*public func wait(`for` order: AcmeOrderInfo, timeout: TimeInterval) async throws -> [AcmeAuthorization] {
-            let startDate = Date()
-            let stopDate = startDate.addingTimeInterval(timeout)
-            repeat {
-                let authorizations = try await getAuthorizations(from: order)
-                let pending = authorizations.filter({$0.status == .pending})
-                if pending.count == 0 { break } // nothing to wait for
-                try await Task.sleep(nanoseconds: 5_000_000_000)
-            } while stopDate > Date()
-            
-            let notReady = try await getAuthorizations(from: order)
-                .filter({$0.status != .valid})
-            return notReady
-        }*/
-        
         private func validateChallenge(url: URL) async throws -> AcmeAuthorization.Challenge {
             try await self.client.ensureLoggedIn()
             
@@ -402,6 +364,35 @@ extension AcmeSwift {
             let ep = ValidateAttestationChallengeEndpoint(challengeURL: url, spec: payload)
             let (updatedChallenge, _) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
             return updatedChallenge
+        }
+
+        private func finalize(order: inout AcmeOrderInfo, csrBytes: Data) async throws {
+            try await self.client.ensureLoggedIn()
+
+            let pemStr = csrBytes.toBase64UrlString()
+            let ep = FinalizeOrderEndpoint(orderURL: order.finalize, spec: .init(csr: pemStr))
+
+            let (info, headers) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
+            order = info
+            if order.url == nil {
+                order.url = URL(string: headers["Location"].first ?? "")
+            }
+            /* RFC8555
+             "processing": The certificate is being issued.  Send a POST-as-GET
+             request after the time given in the Retry-After header field of
+             the response, if any.
+            */
+            while order.status == .processing {
+                var delay: Duration = .seconds(3)
+                if let recommendedRaw = headers["retry-after"].first, let recommended = Int(recommendedRaw) {
+                    delay = .seconds(recommended)
+                }
+                try await Task.sleep(for: delay)
+                try await self.refresh(&order)
+            }
+            if order.url == nil {
+                order.url = URL(string: headers["Location"].first ?? "")
+            }
         }
 
         /// Return the SHA256 digest of the ACMEv2 account public key's JWK JSON.
