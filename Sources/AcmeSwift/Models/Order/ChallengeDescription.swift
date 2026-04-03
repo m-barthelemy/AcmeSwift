@@ -21,4 +21,4 @@ public struct ChallengeDescription: Sendable {
     internal let url: URL
 }
 
-extension ChallengeDescription: Codable{}
+extension ChallengeDescription: Codable {}
