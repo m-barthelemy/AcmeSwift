@@ -128,6 +128,6 @@ public struct AcmeResponseError: Error, Sendable {
     }
 }
 
-extension AcmeError: Codable{}
+extension AcmeError: Codable {}
 extension AcmeResponseError: Codable {}
-extension AcmeResponseError.AcmeErrorType: Codable{}
+extension AcmeResponseError.AcmeErrorType: Codable {}
