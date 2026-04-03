@@ -26,4 +26,4 @@ public struct AcmeDirectory: Sendable {
     }
 }
 
-extension AcmeDirectory: Codable{}
+extension AcmeDirectory: Codable {}
