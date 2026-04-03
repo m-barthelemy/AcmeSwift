@@ -11,4 +11,4 @@ struct AcmeFinalizeOrderSpec {
     var csr: String
 }
 
-extension AcmeFinalizeOrderSpec: Codable{}
+extension AcmeFinalizeOrderSpec: Codable {}
