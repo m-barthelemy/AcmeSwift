@@ -18,10 +18,10 @@ public class AcmeSwift {
     
     internal var login: AccountCredentials?
     internal var accountURL: URL?
-    
+
     internal let server: URL
     internal let client: HTTPClient
-    private let logger: Logger
+    internal let logger: Logger
     private let decoder: JSONDecoder
     
     public init(client: HTTPClient = .init(eventLoopGroupProvider: .shared(MultiThreadedEventLoopGroup.singleton)), acmeEndpoint: AcmeEndpoint = .letsEncrypt, logger: Logger = Logger.init(label: "AcmeSwift")) async throws {
@@ -64,6 +64,7 @@ public class AcmeSwift {
         if self.accountURL == nil {
             let info = try await self.account.get()
             self.accountURL = info.url
+
         }
     }
 

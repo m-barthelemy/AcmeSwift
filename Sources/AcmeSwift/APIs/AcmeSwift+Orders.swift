@@ -14,8 +14,7 @@ extension AcmeSwift {
     
     public struct OrdersAPI {
         fileprivate var client: AcmeSwift
-        
-        
+
         /// List pending orders for the Account.
         ///
         /// - Warning: No ACMEv2 provider seems to have this actually implemented. Doesn't work with Let's Encrypt.
@@ -287,11 +286,11 @@ extension AcmeSwift {
                         )
                         descs.append(challengeDesc)
 
-                    // The ACME server will not return any DNS persist challenge, since no server info is
-                    // needed to create a suitable DNS TXT record.
                     case .dnsPersist:
-                        // TODO: remove ! and add required `guard` and AcmeError stuff
-                        var digest = "\(challenge.issuerDomainNames!.first!); accounturi=\(client.accountURL!)"
+                        guard let issuerDomainName = challenge.issuerDomainNames?.first else {
+                            throw AcmeError.noIssuerDomainReturned
+                        }
+                        var digest = "\(issuerDomainName); accounturi=\(client.accountURL!)"
                         if let isWildcard = auth.wildcard, isWildcard {
                             digest += "; policy=wildcard"
                         }
@@ -307,7 +306,6 @@ extension AcmeSwift {
                     default:
                         throw AcmeError.unsupportedChallenge(type: challenge.type)
                     }
-
                 }
             }
             return descs
@@ -378,7 +376,7 @@ extension AcmeSwift {
                 order.url = URL(string: headers["Location"].first ?? "")
             }
             /* RFC8555
-             "processing": The certificate is being issued.  Send a POST-as-GET
+             "processing": The certificate is being issued. Send a POST-as-GET
              request after the time given in the Retry-After header field of
              the response, if any.
             */
@@ -387,6 +385,7 @@ extension AcmeSwift {
                 if let recommendedRaw = headers["retry-after"].first, let recommended = Int(recommendedRaw) {
                     delay = .seconds(recommended)
                 }
+                self.client.logger.debug("Order still in \(order.status) status, will check in \(delay)...")
                 try await Task.sleep(for: delay)
                 try await self.refresh(&order)
             }
@@ -418,16 +417,19 @@ extension AcmeSwift {
         }
     }
 
+    @nonexhaustive
     public enum KeyType: Sendable {
         case rsa(_ bits: RSABits = .`2048`)
         case ecdsa(_ bits: ECCBits = .p384)
 
+        @nonexhaustive
         public enum RSABits: Sendable {
             case `2048`
             case `3072`
             case `4096`
         }
 
+        @nonexhaustive
         public enum ECCBits: Sendable {
             /// secp256r1 or prime256v1
             case p256

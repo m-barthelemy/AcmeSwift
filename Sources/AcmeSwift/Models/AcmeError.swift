@@ -16,7 +16,10 @@ public enum AcmeError: Error, Sendable {
     
     /// No nonce (anti-replay) value was returned by the endpoint
     case noNonceReturned
-    
+
+    /// No CA/Issuer domain returned by server for a dns-persist-01 challenge.
+    case noIssuerDomainReturned
+
     case dataCorrupted(String)
     case errorCode(UInt, String)
     

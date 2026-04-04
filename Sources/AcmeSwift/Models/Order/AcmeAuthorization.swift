@@ -57,6 +57,7 @@ public struct AcmeAuthorization: Sendable {
         /// Error that occurred while the server was validating the challenge
         public let error: AcmeResponseError?
 
+        @nonexhaustive
         public enum ChallengeType: String, Sendable {
             //// A HTTP challenge that requires publishing the contents of a challenge at a specific URL to prove ownership of the domain record.
             case http = "http-01"
