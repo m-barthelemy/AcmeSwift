@@ -252,7 +252,7 @@ extension AcmeSwift {
                         let challengeDesc = ChallengeDescription(
                             type: challenge.type,
                             endpoint: "_acme-challenge.\(auth.identifier.value)",
-                            value: Crypto.SHA256.hash(data: Array(digest.utf8)).base64URLString,
+                            value: SHA256.hash(data: Array(digest.utf8)).base64URLString,
                             token: token,
                             url: challenge.url
                         )
@@ -299,6 +299,21 @@ extension AcmeSwift {
                             endpoint: "_validation-persist.\(auth.identifier.value)",
                             value: digest,
                             token: nil,
+                            url: challenge.url
+                        )
+                        descs.append(challengeDesc)
+
+                    case .dnsAccount:
+                        guard let token = challenge.token else {
+                            throw AcmeError.missingChallengeToken
+                        }
+                        let accountHash = (Data(SHA256.hash(data: Array("\(client.accountURL!)".utf8)))[0...9]).base32String()
+                        let digest = "\(token).\(accountThumbprint.base64URLString)"
+                        let challengeDesc = ChallengeDescription(
+                            type: challenge.type,
+                            endpoint: "_acme-challenge_\(accountHash).\(auth.identifier.value)",
+                            value: SHA256.hash(data: Array(digest.utf8)).base64URLString,
+                            token: token,
                             url: challenge.url
                         )
                         descs.append(challengeDesc)

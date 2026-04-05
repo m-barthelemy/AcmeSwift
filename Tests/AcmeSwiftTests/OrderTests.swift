@@ -79,7 +79,7 @@ final class OrderTests: XCTestCase {
         defer {try? acme.syncShutdown()}
         
         try acme.account.use(login)
-        let domains = ["acmeswift-tests2.nuw.run"]
+        let domains = ["acmeswift-tests-dns-account-01.nuw.run"]
 
         do {
             var order = try await acme.orders.create(domains: domains)
@@ -88,7 +88,7 @@ final class OrderTests: XCTestCase {
                 if desc.type == .http {
                     logger.info(" • The URL \(desc.endpoint) needs to return \(desc.value)")
                 }
-                else if desc.type == .dns {
+                else if desc.type == .dns || desc.type == .dnsAccount {
                     logger.info(" • Create the following DNS record: \(desc.endpoint) TXT \(desc.value)")
                 }
                 else if desc.type == .dnsPersist {
@@ -96,7 +96,7 @@ final class OrderTests: XCTestCase {
                 }
             }
             logger.info("=====> CREATE DNS CHALLENGES!!")
-            try await Task.sleep(for: .seconds(10))
+            try await Task.sleep(for: .seconds(30))
 
             var remainingChallenges = try await acme.orders.validateChallenges(from: order, preferring: .dnsPersist)
             for timeout in [5, 10, 10, 10, 10, 30] {
