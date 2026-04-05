@@ -79,7 +79,7 @@ final class OrderTests: XCTestCase {
         defer {try? acme.syncShutdown()}
         
         try acme.account.use(login)
-        let domains = ["acmeswift-tests-dns-account-01.nuw.run"]
+        let domains = ["acmeswift-tests-dns-persist-01.nuw.run"]
 
         do {
             var order = try await acme.orders.create(domains: domains)
