@@ -290,7 +290,9 @@ extension AcmeSwift {
                         guard let issuerDomainName = challenge.issuerDomainNames?.first else {
                             throw AcmeError.noIssuerDomainReturned
                         }
-                        var digest = "\(issuerDomainName); accounturi=\(client.accountURL!)"
+                        // Fetching accountURI from the challenge is the preferred method, but Let'sencrypt
+                        // does not implement the latest draft of the spec (01), so we add a fallback.
+                        var digest = "\(issuerDomainName); accounturi=\(challenge.accountURI ?? client.accountURL!)"
                         if let isWildcard = auth.wildcard, isWildcard {
                             digest += "; policy=wildcard"
                         }
