@@ -17,4 +17,5 @@ struct AcmeAccountSpec {
     }
 }
 
-extension AcmeAccountSpec: Codable{}
+extension AcmeAccountSpec: Codable {}
+

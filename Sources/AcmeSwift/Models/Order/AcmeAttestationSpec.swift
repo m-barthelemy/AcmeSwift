@@ -8,4 +8,4 @@ public struct AcmeAttestationSpec {
     var attObj: String
 }
 
-extension AcmeAttestationSpec: Codable{}
+extension AcmeAttestationSpec: Codable {}
