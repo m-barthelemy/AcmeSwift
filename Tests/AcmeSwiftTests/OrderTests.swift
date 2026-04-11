@@ -79,32 +79,40 @@ final class OrderTests: XCTestCase {
         defer {try? acme.syncShutdown()}
         
         try acme.account.use(login)
-        let domains = ["www.nuw.run"]
-        
+        let domains = ["acmeswift-tests-dns-persist-01.nuw.run"]
+
         do {
             var order = try await acme.orders.create(domains: domains)
             //try await Task.sleep(nanoseconds: 60_000_000_000)
-            for desc in try await acme.orders.describePendingChallenges(from: order, preferring: .dns) {
+            for desc in try await acme.orders.describePendingChallenges(from: order, preferring: .dnsPersist) {
                 if desc.type == .http {
-                    print("\n • The URL \(desc.endpoint) needs to return \(desc.value)")
+                    logger.info(" • The URL \(desc.endpoint) needs to return \(desc.value)")
                 }
-                else if desc.type == .dns {
-                    print("\n • Create the following DNS record: \(desc.endpoint) TXT \(desc.value)")
+                else if desc.type == .dns || desc.type == .dnsAccount {
+                    logger.info(" • Create the following DNS record: \(desc.endpoint) TXT \(desc.value)")
+                }
+                else if desc.type == .dnsPersist {
+                    logger.info(" • Create the following DNS Persistent record: \(desc.endpoint) TXT \(desc.value)")
                 }
             }
-            print("\n =====> CREATE DNS CHALLENGES!!\n")
-            
-            try await Task.sleep(for: .seconds(20))
-            
-            let failed = try await acme.orders.validateChallenges(from: order, preferring: .dns)
-            guard failed.count == 0 else {
-                fatalError("Some validations failed! \(failed)")
-            }
-            try await acme.orders.refresh(&order)
-            print("\n => order: \(toJson(order))")
+            logger.info("=====> CREATE DNS CHALLENGES!!")
+            try await Task.sleep(for: .seconds(30))
 
-            let (key, _, finalized) = try await acme.orders.finalizeWithEcdsa(order: order, domains: domains)
-            let certs = try await acme.certificates.download(for: finalized)
+            var remainingChallenges = try await acme.orders.validateChallenges(from: order, preferring: .dnsPersist)
+            for timeout in [5, 10, 10, 10, 10, 30] {
+                guard !remainingChallenges.isEmpty else { break }
+                try await Task.sleep(for: .seconds(timeout))
+                remainingChallenges = try await acme.orders.validateChallenges(from: order, preferring: .dnsPersist)
+            }
+            // Give up if we still haven't satisfied the request:
+            guard remainingChallenges.isEmpty else {
+                fatalError("Some validations failed! \(remainingChallenges)")
+            }
+            logger.debug("Order: \(toJson(order))")
+
+            let key = try await acme.orders.finalize(order: &order, type: .ecdsa(.p256))
+            logger.info("Certificate ready for download!")
+            let certs = try await acme.certificates.download(for: order)
             try certs.joined(separator: "\n").write(to: URL(fileURLWithPath: "cert.pem"), atomically: true, encoding: .utf8)
             
             try key.serializeAsPEM().pemString.write(to: URL(fileURLWithPath: "key.pem"), atomically: true, encoding: .utf8)
@@ -121,5 +129,4 @@ final class OrderTests: XCTestCase {
         let data = try! encoder.encode(value)
         return String(decoding: data, as: UTF8.self)
     }
-    
 }

@@ -2,8 +2,8 @@ import Foundation
 import JWTKit
 
 /// Account information returned when calling `get()` or `create()`.
-public struct AcmeAccountInfo: Codable, Sendable {
-    
+public struct AcmeAccountInfo: Sendable, Codable {
+
     /// URL containing the ID of the Account.
     ///
     /// - Note: This URL is used to perform some account management operations.

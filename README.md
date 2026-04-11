@@ -2,16 +2,14 @@
 [![Language](https://img.shields.io/badge/Swift-5.5-brightgreen.svg)](http://swift.org)
 [![Platforms](https://img.shields.io/badge/platform-linux--64%20%7C%20osx--64-blue)]()
 
-This is a **work in progress** Let's Encrypt (ACME v2) client written in Swift. 
+This is an ACME v2 client written in Swift.
 
 It fully uses the Swift concurrency features introduced with Swift 5.5 (`async`/`await`).
 
-Although it _might_ work with other certificate providers implementing ACMEv2, this has not been tested at all.
-
 
 ## Note
-This library doesn't handle any ACME challenge at all by itself.
-Publishing the challenge, either by creating DNS record or exposing the value over HTTP, is your full responsibility. 
+- This library doesn't handle any ACME challenge at all by itself. Publishing the challenge, either by creating DNS record or exposing the value over HTTP, is out of scope. 
+- It's currently tested with Let's Encrypt. While it may work with other certificate authorities, there is currently no support for External Account Binding (EAB) which is required by some of them. 
 
 
 ## Installation
@@ -21,7 +19,7 @@ import PackageDescription
 let package = Package(
     dependencies: [
         ...
-        .package(url: "https://github.com/m-barthelemy/AcmeSwift.git", from: "1.0.0-beta3"),
+        .package(url: "https://github.com/m-barthelemy/AcmeSwift.git", from: "1.0.0"),
     ],
     targets: [
         .target(name: "App", dependencies: [
@@ -67,7 +65,7 @@ For example, you can encode it to JSON, save it somewhere and then decode it in 
 
 > [!WARNING]
 > This Account information contains a private key and as such, **must** be stored securely.
-
+> This is especially important if you are using [`dns-persist-01`](https://letsencrypt.org/2026/02/18/dns-persist-01#dns-persist-01-authorizes-persistently) challenges, who can grant permanent permissions to generate certificates for a given DNS record or even a whole domain to your ACME account.
 
 <br/>
 
@@ -122,7 +120,7 @@ try await acme.orders.refresh(&order)
 Create an Order for a new certificate:
 ```swift
  
-let order = try await acme.orders.create(domains: ["mydomain.com", "www.mydomain.com"])
+var order = try await acme.orders.create(domains: ["mydomain.com", "www.mydomain.com"])
 ```
 
 <br/>
@@ -163,16 +161,17 @@ Once all the authorizations/challenges are valid, we can finalize the Order by s
 
 If you already have a CSR:
 ```swift
-let finalizedOrder = try await acme.orders.finalize(order: order, withPemCsr: "...")
+try await acme.orders.finalize(order: &order, withPemCsr: "...")
 ```
 
 
-If you want AcmeSwift to generate one for you:
+If you want AcmeSwift to generate a private key and CSR for you:
 ```swift
 // ECDSA key and certificate
-let (privateKey, csr, finalizedOrder) = try await acme.orders.finalizeWithEcdsa(order: order, domains: ["mydomain.com", "www.mydomain.com"])
+let key = try await acme.orders.finalize(order: &order) // Defaults to ECDSA P-384
+let key = try await acme.orders.finalize(order: &order, type: .ecdsa(.p256)) // Custom: ECDSA P-256
 // .. or, good old RSA
-let (privateKey, csr, finalizedOrder) = try await acme.orders.finalizeWithRsa(order: order, domains: ["mydomain.com", "www.mydomain.com"])
+let key = try await acme.orders.finalize(order: &order, type: .rsa(.`2048`))
 
 // You can access the private key used to generate the CSR (and to use once you get the certificate)
 print("\n• Private key: \(try privateKey.serializeAsPEM().pemString)")
@@ -199,7 +198,7 @@ for var cert in certs {
 }
 ```
 
-This return a list of PEM-encoded certificates. The first item is the actual certificate for the requested domains.
+This return a list of PEM-encoded certificates. The first item is the actual, leaf certificate for the requested domains.
 The following items are the other certificates required to establish the full certification chain (issuing CA, root CA...).
 
 The order of the items in the list is directly compatible with the way SwiftNIO and Nginx expects them; you can concatenate all the items into a single file and pass this file to the `ssl_certificate` directive:
@@ -270,7 +269,7 @@ try acme.account.use(credentials)
 let domains: [String] = ["*.ponies.com", "ponies.com"]
 
 // Create a certificate order for *.ponies.com
-let order = try await acme.orders.create(domains: domains)
+var order = try await acme.orders.create(domains: domains)
 
 // ... after that, now we can fetch the challenges we need to complete
 for desc in try await acme.orders.describePendingChallenges(from: order, preferring: .dns) {
@@ -301,12 +300,12 @@ guard remainingChallenges.isEmpty else {
     throw ChallengeValidationError()
 }
 
-// Let's create a private key and CSR using the rudimentary feature provided by AcmeSwift
+// Let's create a private key, a CSR and send it all at once.
 // If the validation didn't throw any error, we can now send our Certificate Signing Request...
-let (privateKey, csr, finalized) = try await acme.orders.finalizeWithRsa(order: order, domains: domains)
+let key = try await acme.orders.finalize(order: &order, type: .ecdsa())
 
 // ... and the certificate is ready to download!
-let certs = try await acme.certificates.download(for: finalized)
+let certs = try await acme.certificates.download(for: finalizedOrder)
 
 // Let's save the full certificates chain to a file 
 try certs.joined(separator: "\n").write(to: URL(fileURLWithPath: "cert.pem"), atomically: true, encoding: .utf8)
@@ -316,7 +315,3 @@ try certs.joined(separator: "\n").write(to: URL(fileURLWithPath: "cert.pem"), at
 try privateKey.serializeAsPEM().pemString.write(to: URL(fileURLWithPath: "key.pem"), atomically: true, encoding: .utf8)
 ``` 
 
-
-
-## Credits
-Part of the CSR feature is inspired by and/or taken from the excellent Shield project (https://github.com/outfoxx/Shield)

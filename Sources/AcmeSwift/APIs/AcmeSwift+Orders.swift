@@ -14,8 +14,7 @@ extension AcmeSwift {
     
     public struct OrdersAPI {
         fileprivate var client: AcmeSwift
-        
-        
+
         /// List pending orders for the Account.
         ///
         /// - Warning: No ACMEv2 provider seems to have this actually implemented. Doesn't work with Let's Encrypt.
@@ -40,8 +39,8 @@ extension AcmeSwift {
             try await self.client.ensureLoggedIn()
 
             let ep = GetOrderEndpoint(url: url)
-            var (info, headers) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
-            info.url = URL(string: headers["Location"].first ?? "")
+            var (info, _) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
+            info.url = url
             return info
         }
         
@@ -55,6 +54,7 @@ extension AcmeSwift {
                 throw AcmeError.noResourceUrl
             }
             order = try await get(url: url)
+            order.url = url
         }
         
         
@@ -120,119 +120,94 @@ extension AcmeSwift {
             return AcmeAttestationSpec(attObj: attObj)
         }
 
+        /// Finalizes an Order, and generates a private key and CSR.
+        /// - Parameters:
+        ///   - order: The `AcmeOrderInfo` returned by the call to `.create()`.
+        ///   - subject: Subject of certificate.
+        ///   - type: The type of the private key and certificate. Default: `.ecdsa(.p384)` (ECDSA P-384).
+        /// - Throws: Errors that can occur when executing the request.
+        /// - Returns: Returns the automatically generated `Certificate.PrivateKey`.
+        public func finalize(order: inout AcmeOrderInfo, subject: String? = nil, type: KeyType = .ecdsa()) async throws -> Certificate.PrivateKey {
+
+            guard order.identifiers.count > 0 else {
+                throw AcmeError.noDomains("At least 1 DNS name is required")
+            }
+
+            var privateKey: Certificate.PrivateKey!
+            var signatureAlg: Certificate.SignatureAlgorithm!
+            switch type {
+            case .ecdsa(let alg):
+                switch alg {
+                case .p256:
+                    privateKey = .init(P256.Signing.PrivateKey())
+                    signatureAlg = .ecdsaWithSHA256
+                case .p384:
+                    privateKey = .init(P384.Signing.PrivateKey())
+                    signatureAlg = .ecdsaWithSHA384
+                case .p521:
+                    privateKey = .init(P521.Signing.PrivateKey())
+                    signatureAlg = .ecdsaWithSHA512 // ?
+                }
+            case .rsa(let bits):
+                var keySize: _RSA.Signing.KeySize!
+                switch bits {
+                case .`2048`:
+                    keySize = .bits2048
+                case .`3072`:
+                    keySize = .bits3072
+                case .`4096`:
+                    keySize = .bits4096
+                }
+                privateKey = try .init(_CryptoExtras._RSA.Signing.PrivateKey(keySize: keySize))
+                signatureAlg = .sha256WithRSAEncryption
+            }
+            let commonName = subject ?? order.identifiers[0].value
+            let name = try DistinguishedName {
+                CommonName(commonName)
+            }
+            let extensions = try Certificate.Extensions {
+                SubjectAlternativeNames(order.identifiers.map({ GeneralName.dnsName($0.value) }))
+            }
+            let extensionRequest = ExtensionRequest(extensions: extensions)
+            let attributes = try CertificateSigningRequest.Attributes(
+                [.init(extensionRequest)]
+            )
+            let csr = try CertificateSigningRequest(
+                version: .v1,
+                subject: name,
+                privateKey: privateKey,
+                attributes: attributes,
+                signatureAlgorithm: signatureAlg
+            )
+
+            try await finalize(order: &order, withCsr: csr)
+            return privateKey
+        }
+
+        
+        /// Finalizes an Order and send the CSR.
+        /// - Parameters:
+        ///   - order: The `AcmeOrderInfo` returned by the call to `.create()`.
+        ///   - withCsr: An instance of a `CertificateSigningRequest`.
+        /// - Throws: Errors that can occur when executing the request.
+        public func finalize(order: inout AcmeOrderInfo, withCsr csr: CertificateSigningRequest) async throws {
+            var serializer = DER.Serializer()
+            try serializer.serialize(csr)
+
+            let csrBytes = Data(serializer.serializedBytes)
+            try await finalize(order: &order, csrBytes: csrBytes)
+        }
+
         /// Finalizes an Order and send the CSR.
         /// - Parameters:
         ///   - order: The `AcmeOrderInfo` returned by the call to `.create()`.
         ///   - withPemCsr: The CSR (Certificate Signing Request) **in PEM format**.
         /// - Throws: Errors that can occur when executing the request.
-        /// - Returns: Returns  the `Account`.
-        public func finalize(order: AcmeOrderInfo, withPemCsr: String) async throws -> AcmeOrderInfo {
-            try await self.client.ensureLoggedIn()
-            
+        public func finalize(order: inout AcmeOrderInfo, withPemCsr: String) async throws {
             let csrBytes = withPemCsr.pemToData()
-            let pemStr = csrBytes.toBase64UrlString()
-            let ep = FinalizeOrderEndpoint(orderURL: order.finalize, spec: .init(csr: pemStr))
-            
-            let (info, _) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
-            return info
+            try await finalize(order: &order, csrBytes: csrBytes)
         }
 
-        /// Finalizes an Order and send the ECDSA CSR.
-        /// - Parameters:
-        ///   - order: The `AcmeOrderInfo` returned by the call to `.create()`.
-        ///   - subject: Subject of certificate.
-        ///   - domains: Domains for certificate.
-        /// - Throws: Errors that can occur when executing the request.
-        /// - Returns: Returns  `Certificate.PrivateKey`, `CertificateSigningRequest` and `Account`.
-        public func finalizeWithEcdsa(order: AcmeOrderInfo, subject: String? = nil, domains: [String]) async throws -> (Certificate.PrivateKey, CertificateSigningRequest, AcmeOrderInfo) {
-            guard domains.count > 0 else {
-                throw AcmeError.noDomains("At least 1 DNS name is required")
-            }
-
-            let p256 = P256.Signing.PrivateKey()
-            let privateKey = Certificate.PrivateKey(p256)
-            let commonName = subject ?? domains[0]
-            let name = try DistinguishedName {
-                CommonName(commonName)
-            }
-            let extensions = try Certificate.Extensions {
-                SubjectAlternativeNames(domains.map({ GeneralName.dnsName($0) }))
-            }
-            let extensionRequest = ExtensionRequest(extensions: extensions)
-            let attributes = try CertificateSigningRequest.Attributes(
-                [.init(extensionRequest)]
-            )
-            let csr = try CertificateSigningRequest(
-                version: .v1,
-                subject: name,
-                privateKey: privateKey,
-                attributes: attributes,
-                signatureAlgorithm: .ecdsaWithSHA256
-            )
-            
-            let account = try await finalize(order: order, withCsr: csr)
-
-            return (privateKey, csr, account)
-        }
-
-        /// Finalizes an Order and send the RSA CSR.
-        /// - Parameters:
-        ///   - order: The `AcmeOrderInfo` returned by the call to `.create()`.
-        ///   - subject: Subject of certificate.
-        ///   - domains: Domains for certificate.
-        /// - Throws: Errors that can occur when executing the request.
-        /// - Returns: Returns  `Certificate.PrivateKey`, `CertificateSigningRequest` and `Account`.
-        public func finalizeWithRsa(order: AcmeOrderInfo, subject: String? = nil, domains: [String]) async throws -> (Certificate.PrivateKey, CertificateSigningRequest, AcmeOrderInfo) {
-            guard domains.count > 0 else {
-                throw AcmeError.noDomains("At least 1 DNS name is required")
-            }
-
-            let p256 = try _CryptoExtras._RSA.Signing.PrivateKey(keySize: .bits2048)
-            let privateKey = Certificate.PrivateKey(p256)
-            let commonName = subject ?? domains[0]
-            let name = try DistinguishedName {
-                CommonName(commonName)
-            }
-            let extensions = try Certificate.Extensions {
-                SubjectAlternativeNames(domains.map({ GeneralName.dnsName($0) }))
-            }
-            let extensionRequest = ExtensionRequest(extensions: extensions)
-            let attributes = try CertificateSigningRequest.Attributes(
-                [.init(extensionRequest)]
-            )
-            let csr = try CertificateSigningRequest(
-                version: .v1,
-                subject: name,
-                privateKey: privateKey,
-                attributes: attributes,
-                signatureAlgorithm: .sha256WithRSAEncryption
-            )
-
-            let account = try await finalize(order: order, withCsr: csr)
-
-            return (privateKey, csr, account)
-        }
-        
-        /// Finalizes an Order and send the CSR.
-        /// - Parameters:
-        ///   - order: The `AcmeOrderInfo` returned by the call to `.create()`.
-        ///   - withCsr: An instance of an `Certificate`.
-        /// - Throws: Errors that can occur when executing the request.
-        /// - Returns: Returns  the `Account`.
-        public func finalize(order: AcmeOrderInfo, withCsr csr: CertificateSigningRequest) async throws -> AcmeOrderInfo {
-            try await self.client.ensureLoggedIn()
-
-            var serializer = DER.Serializer()
-            try serializer.serialize(csr)
-
-            let csrBytes = Data(serializer.serializedBytes)
-            let pemStr = csrBytes.toBase64UrlString()
-            let ep = FinalizeOrderEndpoint(orderURL: order.finalize, spec: .init(csr: pemStr))
-            
-            let (info, _) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
-            return info
-        }
-        
         /// Get the authorizations containing the challenges for this Order.
         /// - Parameters:
         ///   - from: The `AcmeOrderInfo` representing the certificates Order.
@@ -267,33 +242,86 @@ extension AcmeSwift {
             var descs: [ChallengeDescription] = []
             for auth in authorizations where auth.status == .pending {
                 for challenge in auth.challenges where (challenge.type == preferring || auth.wildcard == true) && (challenge.status == .pending || challenge.status == .invalid) {
-                    let digest = "\(challenge.token).\(accountThumbprint.base64URLString)"
-                    
-                    if challenge.type == .dns {
+
+                    switch challenge.type {
+                    case .dns:
+                        guard let token = challenge.token else {
+                            throw AcmeError.missingChallengeToken
+                        }
+                        let digest = "\(token).\(accountThumbprint.base64URLString)"
                         let challengeDesc = ChallengeDescription(
                             type: challenge.type,
                             endpoint: "_acme-challenge.\(auth.identifier.value)",
-                            value: Crypto.SHA256.hash(data: Array(digest.utf8)).base64URLString,
+                            value: SHA256.hash(data: Array(digest.utf8)).base64URLString,
+                            token: token,
                             url: challenge.url
                         )
                         descs.append(challengeDesc)
-                    }
-                    else if challenge.type == .http {
+
+                    case .http:
+                        guard let token = challenge.token else {
+                            throw AcmeError.missingChallengeToken
+                        }
+                        let digest = "\(token).\(accountThumbprint.base64URLString)"
                         let challengeDesc = ChallengeDescription(
                             type: challenge.type,
-                            endpoint: "http://\(auth.identifier.value)/.well-known/acme-challenge/\(challenge.token)",
+                            endpoint: "http://\(auth.identifier.value)/.well-known/acme-challenge/\(token)",
                             value: digest,
+                            token: token,
                             url: challenge.url
                         )
                         descs.append(challengeDesc)
-                    } else if challenge.type == .deviceAttest {
+
+                    case .deviceAttest:
+                        guard let token = challenge.token else {
+                            throw AcmeError.missingChallengeToken
+                        }
+                        let digest = "\(token).\(accountThumbprint.base64URLString)"
                         let challengeDesc = ChallengeDescription(
                             type: challenge.type,
                             endpoint: "",
                             value: digest,
+                            token: token,
                             url: challenge.url
                         )
                         descs.append(challengeDesc)
+
+                    case .dnsPersist:
+                        guard let issuerDomainName = challenge.issuerDomainNames?.first else {
+                            throw AcmeError.noIssuerDomainReturned
+                        }
+                        // Fetching accountURI from the challenge is the preferred method, but Let'sencrypt
+                        // does not implement the latest draft of the spec (01), so we add a fallback.
+                        var digest = "\(issuerDomainName); accounturi=\(challenge.accountURI ?? client.accountURL!)"
+                        if let isWildcard = auth.wildcard, isWildcard {
+                            digest += "; policy=wildcard"
+                        }
+                        let challengeDesc = ChallengeDescription(
+                            type: preferring,
+                            endpoint: "_validation-persist.\(auth.identifier.value)",
+                            value: digest,
+                            token: nil,
+                            url: challenge.url
+                        )
+                        descs.append(challengeDesc)
+
+                    case .dnsAccount:
+                        guard let token = challenge.token else {
+                            throw AcmeError.missingChallengeToken
+                        }
+                        let accountHash = (Data(SHA256.hash(data: Array("\(client.accountURL!)".utf8)))[0...9]).base32String()
+                        let digest = "\(token).\(accountThumbprint.base64URLString)"
+                        let challengeDesc = ChallengeDescription(
+                            type: challenge.type,
+                            endpoint: "_acme-challenge_\(accountHash).\(auth.identifier.value)",
+                            value: SHA256.hash(data: Array(digest.utf8)).base64URLString,
+                            token: token,
+                            url: challenge.url
+                        )
+                        descs.append(challengeDesc)
+
+                    default:
+                        throw AcmeError.unsupportedChallenge(type: challenge.type)
                     }
                 }
             }
@@ -337,28 +365,6 @@ extension AcmeSwift {
             return updatedChallenge
         }
         
-        
-        /// Poll ACMEv2 provider for order status and return when challenges have been processed.
-        /// - Parameters:
-        ///   - for: The `AcmeOrderInfo` representing the certificates Order.
-        ///   - timeout: Your preferred challenge validation method. Note: when requesting a wildcard certificate, a challenge will have to be published over DNS regardless of your preferred method..
-        /// - Throws: Errors that can occur when executing the request.
-        /// - Returns: Returns a list of `AcmeAuthorization` that are not is a `valid` status.
-        /*public func wait(`for` order: AcmeOrderInfo, timeout: TimeInterval) async throws -> [AcmeAuthorization] {
-            let startDate = Date()
-            let stopDate = startDate.addingTimeInterval(timeout)
-            repeat {
-                let authorizations = try await getAuthorizations(from: order)
-                let pending = authorizations.filter({$0.status == .pending})
-                if pending.count == 0 { break } // nothing to wait for
-                try await Task.sleep(nanoseconds: 5_000_000_000)
-            } while stopDate > Date()
-            
-            let notReady = try await getAuthorizations(from: order)
-                .filter({$0.status != .valid})
-            return notReady
-        }*/
-        
         private func validateChallenge(url: URL) async throws -> AcmeAuthorization.Challenge {
             try await self.client.ensureLoggedIn()
             
@@ -373,6 +379,36 @@ extension AcmeSwift {
             let ep = ValidateAttestationChallengeEndpoint(challengeURL: url, spec: payload)
             let (updatedChallenge, _) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
             return updatedChallenge
+        }
+
+        private func finalize(order: inout AcmeOrderInfo, csrBytes: Data) async throws {
+            try await self.client.ensureLoggedIn()
+
+            let pemStr = csrBytes.toBase64UrlString()
+            let ep = FinalizeOrderEndpoint(orderURL: order.finalize, spec: .init(csr: pemStr))
+
+            let (info, headers) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
+            order = info
+            if order.url == nil {
+                order.url = URL(string: headers["Location"].first ?? "")
+            }
+            /* RFC8555
+             "processing": The certificate is being issued. Send a POST-as-GET
+             request after the time given in the Retry-After header field of
+             the response, if any.
+            */
+            while order.status == .processing {
+                var delay: Duration = .seconds(3)
+                if let recommendedRaw = headers["retry-after"].first, let recommended = Int(recommendedRaw) {
+                    delay = .seconds(recommended)
+                }
+                self.client.logger.debug("Order still in \(order.status) status, will check in \(delay)...")
+                try await Task.sleep(for: delay)
+                try await self.refresh(&order)
+            }
+            if order.url == nil {
+                order.url = URL(string: headers["Location"].first ?? "")
+            }
         }
 
         /// Return the SHA256 digest of the ACMEv2 account public key's JWK JSON.
@@ -397,6 +433,30 @@ extension AcmeSwift {
             return Crypto.SHA256.hash(data: try encoder.encode(jwk))
         }
     }
+
+    @nonexhaustive
+    public enum KeyType: Sendable {
+        case rsa(_ bits: RSABits = .`2048`)
+        case ecdsa(_ bits: ECCBits = .p384)
+
+        @nonexhaustive
+        public enum RSABits: Sendable {
+            case `2048`
+            case `3072`
+            case `4096`
+        }
+
+        @nonexhaustive
+        public enum ECCBits: Sendable {
+            /// secp256r1 or prime256v1
+            case p256
+            /// secp384r1 or prime384v1
+            case p384
+            /// secp521r1 or prime521v1.
+            /// May not be supported by all CAs.
+            case p521
+        }
+    }
 }
 
 extension SHA256Digest {
@@ -404,3 +464,4 @@ extension SHA256Digest {
         Data(self).toBase64UrlString()
     }
 }
+

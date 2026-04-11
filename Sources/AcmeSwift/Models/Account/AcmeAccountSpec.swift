@@ -1,7 +1,7 @@
 import Foundation
 
 /// Configuration for creating or querying an ACMEv2 account.
-struct AcmeAccountSpec: Codable {
+struct AcmeAccountSpec {
     var contact: [String] = []
     var termsOfServiceAgreed: Bool = true
     
@@ -16,3 +16,6 @@ struct AcmeAccountSpec: Codable {
         
     }
 }
+
+extension AcmeAccountSpec: Codable {}
+

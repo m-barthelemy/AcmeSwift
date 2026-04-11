@@ -18,10 +18,10 @@ public class AcmeSwift {
     
     internal var login: AccountCredentials?
     internal var accountURL: URL?
-    
+
     internal let server: URL
     internal let client: HTTPClient
-    private let logger: Logger
+    internal let logger: Logger
     private let decoder: JSONDecoder
     
     public init(client: HTTPClient = .init(eventLoopGroupProvider: .shared(MultiThreadedEventLoopGroup.singleton)), acmeEndpoint: AcmeEndpoint = .letsEncrypt, logger: Logger = Logger.init(label: "AcmeSwift")) async throws {
@@ -64,6 +64,7 @@ public class AcmeSwift {
         if self.accountURL == nil {
             let info = try await self.account.get()
             self.accountURL = info.url
+
         }
     }
 
@@ -114,8 +115,12 @@ public class AcmeSwift {
 public enum AcmeEndpoint: Sendable {
     /// The default, production Let's Encrypt endpoint
     case letsEncrypt
-    /// The staging Let's Encrypt endpoint, for tests. Issues certificate not recognized by clients/browsers
+    /// The staging Let's Encrypt endpoint, for tests. Issues certificates not trusted by clients/browsers
     case letsEncryptStaging
+    /// The production Google Trust Services endpoint
+    case google
+    /// The staging Google Trust Services endpoint. Issues certificates not trusted by clients/browsers
+    case googleStaging
     /// A custom URL to a service compatible with the ACMEv2 protocol
     case custom(URL)
     
@@ -123,6 +128,8 @@ public enum AcmeEndpoint: Sendable {
         switch self {
             case .letsEncrypt: return URL(string: "https://acme-v02.api.letsencrypt.org/directory")!
             case .letsEncryptStaging: return URL(string: "https://acme-staging-v02.api.letsencrypt.org/directory")!
+            case .google: return URL(string: "https://dv.acme-v02.api.pki.goog/directory")!
+            case .googleStaging: return URL(string: "https://dv.acme-v02.test-api.pki.goog/directory")!
             case .custom(let url): return url
         }
     }
