@@ -11,7 +11,7 @@ jobs:
         swift: ["6.2", "6.3"]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: swift-actions/setup-swift@364295d9c23900ce04d4e5cc708387921b4e50f9
+      - uses: kkebo/setup-swift@cc582c8cc5903db4beef8e6f57a0f8237073600a
         with:
           swift-version: ${{ matrix.swift }}
       - uses: actions/checkout@v5
