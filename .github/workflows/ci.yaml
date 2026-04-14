@@ -2,20 +2,8 @@ name: Tests
 
 on: [push]
 
+
 jobs:
-  build:
-    name: Swift ${{ matrix.swift }} on ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        swift: ["6.2", "6.3"]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: kkebo/setup-swift@cc582c8cc5903db4beef8e6f57a0f8237073600a
-        with:
-          swift-version: ${{ matrix.swift }}
-      - uses: actions/checkout@v5
-      #- name: Build
-      #  run: swift build
-      - name: Run tests
-        run: swift test
+  tests:
+    name: tests
+    uses: swiftlang/github-workflows/.github/workflows/swift_package_test.yml@0.0.1
