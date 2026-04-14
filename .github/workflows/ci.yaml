@@ -14,6 +14,6 @@ jobs:
     name: tests
     uses: swiftlang/github-workflows/.github/workflows/swift_package_test.yml@0.0.10
     with:
-      linux_swift_versions: ["6.2"]
-      windows_swift_versions: []
+      linux_swift_versions: "[\"6.2\"]"
+      windows_swift_versions: "[]"
 
