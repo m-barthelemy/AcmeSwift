@@ -4,8 +4,8 @@ on:
   push:
   workflow_call:
     inputs:
-      linux_swift_versions: "[\"6.2\"]"
-      windows_swift_versions: "[]"
+      linux_swift_versions: ["6.2"]
+      windows_swift_versions: []
 
 
 jobs:
