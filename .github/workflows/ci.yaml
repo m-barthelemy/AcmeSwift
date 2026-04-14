@@ -6,7 +6,7 @@ on: [push]
 jobs:
   tests:
     name: tests
-    uses: swiftlang/github-workflows/.github/workflows/swift_package_test.yml@0.0.1
+    uses: swiftlang/github-workflows/.github/workflows/swift_package_test.yml@3b5576d74703a6e4e30b49e2d2311313638c82e4
     linux_swift_versions: "[\"6.2\", \"6.3\"]"
     windows_swift_versions: "[]"
 
