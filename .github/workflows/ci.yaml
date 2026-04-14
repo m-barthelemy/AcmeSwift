@@ -1,13 +1,15 @@
 name: Tests
 
-on: [push]
+on: 
+  push:
+  workflow_call:
+    inputs:
+      linux_swift_versions: "[\"6.2\"]"
+      windows_swift_versions: "[]"
 
 
 jobs:
   tests:
     name: tests
     uses: swiftlang/github-workflows/.github/workflows/swift_package_test.yml@0.0.10
-    linux_exclude_swift_versions: "[{\"swift_version\": \"5.9\"}, {\"swift_version\": \"5.10\"}, {\"swift_version\": \"6.0\"}]"
-    #linux_swift_versions: "[\"6.2\", \"6.3\"]"
-    #windows_swift_versions: "[]"
 
