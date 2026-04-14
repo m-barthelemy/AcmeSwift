@@ -30,7 +30,7 @@ struct AcmeRequestBody<T: EndpointProtocol>: Encodable {
     
     private var signature: String = ""
     
-    private var privateKey: Crypto.P256.Signing.PrivateKey
+    private var privateKey: P256.Signing.PrivateKey
     
     enum CodingKeys: String, CodingKey {
         case protected
@@ -59,7 +59,7 @@ struct AcmeRequestBody<T: EndpointProtocol>: Encodable {
         
     }
     
-    init(accountURL: URL? = nil, privateKey: Crypto.P256.Signing.PrivateKey, nonce: String, payload: T) throws {
+    init(accountURL: URL? = nil, privateKey: P256.Signing.PrivateKey, nonce: String, payload: T) throws {
         self.privateKey = privateKey
         let publicKey = privateKey.publicKey.rawRepresentation
         

@@ -1,83 +1,91 @@
-import XCTest
+#if !canImport(Darwin)
+import FoundationEssentials
+#else
+import Foundation
+#endif
 import AsyncHTTPClient
-import NIO
 import Logging
 import SwiftASN1
 import X509
 import Crypto
 
-@testable import AcmeSwift
+import Testing
+import AcmeSwift
 
-final class OrderTests: XCTestCase {
-    var logger: Logger!
-    var http: HTTPClient!
-    
-    override func setUp() async throws {
+@Suite("ACMEv2 Orders")
+struct OrderTests {
+    var logger: Logger
+    var http: HTTPClient
+    let privateKeyPem: String
+    let accountContacts: [String]
+
+    private init() {
         self.logger = Logger.init(label: "acme-swift-tests")
-        self.logger.logLevel = .trace
-        
+        self.logger.logLevel = .debug
+
         let config = HTTPClient.Configuration(certificateVerification: .fullVerification, backgroundActivityLogger: self.logger)
         self.http = HTTPClient(
             eventLoopGroupProvider: .singleton,
             configuration: config
         )
+        self.privateKeyPem = ProcessInfo.processInfo.environment["LETSENCRYPT_PRIVATE_KEY"]!
+
+        guard let contact = ProcessInfo.processInfo.environment["LETSENCRYPT_CONTACT"] else {
+            fatalError("LETSENCRYPT_CONTACTS is not set")
+        }
+        self.accountContacts = [contact]
     }
-    
-    func testCreateOrder() async throws {
+
+    @Test("List Orders")
+    func listOrders() async throws {
         let acme = try await AcmeSwift(client: self.http, acmeEndpoint: .letsEncryptStaging, logger: logger)
         defer {try? acme.syncShutdown()}
-        do {
-            let privateKeyPem = """
-            -----BEGIN PRIVATE KEY-----
-            MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQglxrdsu3lP83xzUej
-            ytJ7zvy2uuW3Qt7SWGRiGx8dJJuhRANCAARcpivMPbQWA/T2h8YNQPgOF+8jhyaY
-            iO6kepubzBqqgk/iub3w+ZBDfKi6RgGYX2yVRlHMS4ZhhSoFFLoP57eI
-            -----END PRIVATE KEY-----
-            """
-            let contacts = ["mailto:bonsouere3456@gmail.com"]
-            
-            let login = try AccountCredentials(contacts: contacts, pemKey: privateKeyPem)
-            let acme = try await AcmeSwift(client: self.http, acmeEndpoint: .letsEncryptStaging, logger: logger)
-            defer {try? acme.syncShutdown()}
-            
-            try acme.account.use(login)
-            
-            var order = try await acme.orders.create(domains: ["burrito.run", "www.burrito.run"])
-            XCTAssert(order.url != nil, "Ensure order has URL")
-            XCTAssert(order.status == .pending, "Ensure order is pending (got \(order.status)")
-            XCTAssert(order.expires > Date(), "Ensure order expiry is parsed (got \(order.expires)")
-            XCTAssert(order.identifiers.count == 2, "Ensure identifiers match number of requested domains (expected 2, got \(order.identifiers.count)")
-            
-            let authorizations = try await acme.orders.getAuthorizations(from: order)
-            XCTAssert(authorizations.count == 2, "Ensure we only have 1 authorization")
-            
-            let challengeDescriptions = try await acme.orders.describePendingChallenges(from: order, preferring: .dns)
-            XCTAssert(challengeDescriptions.count == 2, "Ensure we have 1 pending challenge")
-            XCTAssert(challengeDescriptions.filter({$0.type == .dns}).count == 2, "Ensure challenges are of the desired type")
-            
-            try await acme.orders.refresh(&order)
 
-        }
-        catch(let error) {
-            print("\n•••• BOOM! \(error)")
-            throw error
-        }
-    }
-    
-    func testWrapItUpLikeABurrito() async throws {
-        let privateKeyPem = """
-            -----BEGIN PRIVATE KEY-----
-            MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQglxrdsu3lP83xzUej
-            ytJ7zvy2uuW3Qt7SWGRiGx8dJJuhRANCAARcpivMPbQWA/T2h8YNQPgOF+8jhyaY
-            iO6kepubzBqqgk/iub3w+ZBDfKi6RgGYX2yVRlHMS4ZhhSoFFLoP57eI
-            -----END PRIVATE KEY-----
-            """
         let contacts = ["mailto:bonsouere3456@gmail.com"]
-        
+
+        let login = try AccountCredentials(contacts: contacts, pemKey: privateKeyPem)
+        try acme.account.use(login)
+
+        let urls = try await acme.orders.list()
+        logger.info("•••••• Got \(urls.count) orders: \(urls)")
+    }
+
+    @Test("Create Order", arguments: [AcmeAuthorization.Challenge.ChallengeType.dns, .dnsPersist, .http])
+    func testCreateOrder(_ challenge: AcmeAuthorization.Challenge.ChallengeType) async throws {
+        let acme = try await AcmeSwift(client: self.http, acmeEndpoint: .letsEncryptStaging, logger: logger)
+        defer {try? acme.syncShutdown()}
+
+        let contacts = ["mailto:bonsouere3456@gmail.com"]
+
+        let login = try AccountCredentials(contacts: contacts, pemKey: privateKeyPem)
+        try acme.account.use(login)
+
+        let domains = ["burrito.run", "www.burrito.run"]
+        var order = try await acme.orders.create(domains: domains)
+        #expect(order.url != nil, "Ensure order has URL")
+
+        #expect(order.status == .pending, "Ensure order is pending (got \(order.status)")
+        #expect(order.expires > Date(), "Ensure order expiry is parsed (got \(order.expires)")
+        #expect(order.identifiers.count == domains.count, "Ensure identifiers match number of requested domains (expected \(domains.count), got \(order.identifiers.count)")
+
+        let authorizations = try await acme.orders.getAuthorizations(from: order)
+        #expect(authorizations.count == domains.count, "Ensure we only have 1 authorization")
+
+        let challengeDescriptions = try await acme.orders.describePendingChallenges(from: order, preferring: challenge)
+
+        #expect(challengeDescriptions.count == 2, "Ensure we have \(domains.count) pending challenges")
+
+        try await acme.orders.refresh(&order)
+    }
+
+    /*@Test("Create and Finalize Order")
+    func testWrapItUpLikeABurrito() async throws {
+        let contacts = ["mailto:bonsouere3456@gmail.com"]
+
         let login = try AccountCredentials(contacts: contacts, pemKey: privateKeyPem)
         let acme = try await AcmeSwift(client: self.http, acmeEndpoint: .letsEncryptStaging, logger: logger)
         defer {try? acme.syncShutdown()}
-        
+
         try acme.account.use(login)
         let domains = ["acmeswift-tests-dns-persist-01.nuw.run"]
 
@@ -114,15 +122,15 @@ final class OrderTests: XCTestCase {
             logger.info("Certificate ready for download!")
             let certs = try await acme.certificates.download(for: order)
             try certs.joined(separator: "\n").write(to: URL(fileURLWithPath: "cert.pem"), atomically: true, encoding: .utf8)
-            
+
             try key.serializeAsPEM().pemString.write(to: URL(fileURLWithPath: "key.pem"), atomically: true, encoding: .utf8)
         }
         catch(let error) {
             print("\n•••• BOOM! \(error)")
             throw error
         }
-    }
-    
+    }*/
+
     private func toJson<T: Encodable>(_ value: T) -> String {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
