@@ -11,7 +11,7 @@ jobs:
         swift: ["6.2", "6.3"]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: swift-actions/setup-swift@364295d9c23900ce04d4e5cc708387921b4e50f9  # 2.4.0
+      - uses: swift-actions/setup-swift@364295d9c23900ce04d4e5cc708387921b4e50f9
         with:
           swift-version: ${{ matrix.swift }}
       - uses: actions/checkout@v5
