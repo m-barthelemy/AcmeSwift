@@ -23,8 +23,8 @@ extension HTTPClientResponse {
         if T.self == NoBody.self || T.self == NoBody?.self {
             return NoBody() as! T
         }
-        
-        guard let data = body.readData(length: body.readableBytes) else {
+
+        guard let data =  body.readBytes(length: body.readableBytes) else {
             throw AcmeError.dataCorrupted("Unable to read Data from response body buffer")
         }
         if T.self == String.self {
@@ -38,11 +38,11 @@ extension HTTPClientResponse {
         guard 200...299 ~= self.status.code else {
             var body = try await self.body.collect(upTo: 1 * 1024 * 1024)
             
-            if let data = body.readData(length: body.readableBytes) {
+            if let data = body.readSlice(length: body.readableBytes) {
                 if let error = try? JSONDecoder().decode(AcmeResponseError.self, from: data) {
                     throw error
                 }
-                throw AcmeError.errorCode(self.status.code, String(decoding: data, as: UTF8.self))
+                throw AcmeError.errorCode(self.status.code, String(buffer: data))
             }
             throw AcmeError.errorCode(self.status.code, self.status.reasonPhrase)
         }
