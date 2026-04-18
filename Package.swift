@@ -14,6 +14,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.19.0"),
+        .package(url: "https://github.com/apple/swift-nio.git", from: "2.0.0"),
         .package(url: "https://github.com/apple/swift-crypto.git", "2.1.0" ..< "5.0.0"),
         .package(url: "https://github.com/vapor/jwt-kit.git", "4.13.1" ..< "6.0.0"),
         .package(url: "https://github.com/apple/swift-certificates.git", from: "1.2.0"),
@@ -27,6 +28,7 @@ let package = Package(
             name: "AcmeSwift",
             dependencies: [
                 .product(name: "AsyncHTTPClient", package: "async-http-client"),
+                .product(name: "NIOFoundationCompat", package: "swift/nio"),
                 .product(name: "Crypto", package: "swift-crypto"),
                 .product(name: "_CryptoExtras", package: "swift-crypto"),
                 .product(name: "JWTKit", package: "jwt-kit"),

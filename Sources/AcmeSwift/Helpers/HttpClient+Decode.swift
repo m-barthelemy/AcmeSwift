@@ -1,5 +1,5 @@
 import Foundation
-import NIO
+import NIOFoundationCompat
 import AsyncHTTPClient
 import Logging
 
