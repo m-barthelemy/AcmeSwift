@@ -28,7 +28,7 @@ let package = Package(
             name: "AcmeSwift",
             dependencies: [
                 .product(name: "AsyncHTTPClient", package: "async-http-client"),
-                .product(name: "NIOFoundationCompat", package: "swift/nio"),
+                .product(name: "NIOFoundationCompat", package: "swift-nio"),
                 .product(name: "Crypto", package: "swift-crypto"),
                 .product(name: "_CryptoExtras", package: "swift-crypto"),
                 .product(name: "JWTKit", package: "jwt-kit"),
