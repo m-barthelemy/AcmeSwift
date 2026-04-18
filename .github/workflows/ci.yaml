@@ -16,7 +16,6 @@ jobs:
     with:
       linux_swift_versions: "[\"6.2\"]"
       windows_swift_versions: "[]"
-    env:
-     LETSENCRYPT_PRIVATE_KEY: ${{ secrets.LETSENCRYPT_PRIVATE_KEY }}
-     GOOGLE_PRIVATE_KEY:      ${{ secrets.GOOGLE_PRIVATE_KEY }}
+      LETSENCRYPT_PRIVATE_KEY: ${{ secrets.LETSENCRYPT_PRIVATE_KEY }}
+      GOOGLE_PRIVATE_KEY:      ${{ secrets.GOOGLE_PRIVATE_KEY }}
 
