@@ -1,7 +1,6 @@
 import Foundation
 
-
-public struct AcmeOrderSpec: Codable, Sendable {
+public struct AcmeOrderSpec: Sendable {
     public init(identifiers: [AcmeOrderSpec.Identifier], notBefore: Date? = nil, notAfter: Date? = nil) {
         self.identifiers = identifiers
         self.notBefore = notBefore
@@ -24,6 +23,9 @@ public struct AcmeOrderSpec: Codable, Sendable {
         
         public enum IdentifierType: String, Codable, Sendable {
             case dns
+            case permanentIdentifier = "permanent-identifier"
         }
     }
 }
+
+extension AcmeOrderSpec: Codable {}

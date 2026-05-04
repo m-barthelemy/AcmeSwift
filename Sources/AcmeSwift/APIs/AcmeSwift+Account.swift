@@ -73,6 +73,7 @@ extension AcmeSwift {
                 contacts: account.contact ?? [],
                 pemKey: privateKey
             )
+            self.client.accountURL = account.url
         }
         
         /// Use an existing Account for the ACMEv2 provider

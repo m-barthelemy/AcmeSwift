@@ -1,6 +1,6 @@
 import Foundation
 
-public struct ChallengeDescription: Codable, Sendable {
+public struct ChallengeDescription: Sendable {
     /// The type of challenge.
     /// For a wildcard certificate, there will **always** be a at least one DNS challenge, even if your preferred method is HTTP.
     public let type: AcmeAuthorization.Challenge.ChallengeType
@@ -11,8 +11,14 @@ public struct ChallengeDescription: Codable, Sendable {
     
     /// For a DNS challenge, the **TXT** record value.
     /// For an HTTP challenge, the exact value that the `endpoint` must return over HTTP on port 80.
+    /// For a device-attest-01 challenge, the data to be signed.
     public let value: String
-    
-    /// The ACMEv2 server URL for validating this challenge.
+
+    /// A random value that uniquely identifies the challenge
+    public let token: String?
+
+    /// The ACMEv2 server URL for validating this challenge
     internal let url: URL
 }
+
+extension ChallengeDescription: Codable {}

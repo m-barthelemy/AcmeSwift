@@ -1,7 +1,7 @@
 import Foundation
 
 /// Information returned when creating a new Order.
-public struct AcmeOrderInfo: Codable, Sendable {
+public struct AcmeOrderInfo: Sendable {
         
     /// The URL of this Order.
     internal(set) public var url: URL?
@@ -55,3 +55,5 @@ public struct AcmeOrderInfo: Codable, Sendable {
         case valid
     }
 }
+
+extension AcmeOrderInfo: Codable {}

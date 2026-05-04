@@ -1,7 +1,6 @@
 import Foundation
 
-
-struct CertificateRevokeSpec: Codable {
+struct CertificateRevokeSpec {
     /// PEM representation of the certificate.
     public var certificate: String
     
@@ -22,3 +21,5 @@ public enum AcmeRevokeReason: Int, Codable, Sendable {
     case privilegeWithdrawn = 9
     case aACompromise = 10
 }
+
+extension CertificateRevokeSpec: Codable {}
