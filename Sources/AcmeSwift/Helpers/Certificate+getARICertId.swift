@@ -8,16 +8,23 @@ extension X509.Certificate {
             throw AcmeError.missingAuthorityKeyIdentifier
         }
 
-        // TODO: support older versions
-        guard #available(macOS 26.4, iOS 26.4, watchOS 26.4, tvOS 26.4, visionOS 26.4, *) else {
-            fatalError("swift too old")
+        var ariCertId: String
+        if #available(macOS 26.4, iOS 26.4, watchOS 26.4, tvOS 26.4, visionOS 26.4, *) {
+            let encodedAki = Data(aki)
+                .base64EncodedString(options: [.omitPaddingCharacter, .base64URLAlphabet])
+            let encodedSerial = Data(self.serialNumber.bytes)
+                .base64EncodedString(options: [.omitPaddingCharacter, .base64URLAlphabet])
+            ariCertId = encodedAki + "." + encodedSerial
         }
-        let encodedAki = Data(aki)
-            .base64EncodedString(options: [.omitPaddingCharacter, .base64URLAlphabet])
-        let encodedSerial = Data(self.serialNumber.bytes)
-            .base64EncodedString(options: [.omitPaddingCharacter, .base64URLAlphabet])
-
-        let ariCertId = encodedAki + "." + encodedSerial
+        else {
+            let encodedAki = Data(aki)
+                .base64EncodedString()
+                .base64ToBase64Url()
+            let encodedSerial = Data(self.serialNumber.bytes)
+                .base64EncodedString()
+                .base64ToBase64Url()
+            ariCertId = encodedAki + "." + encodedSerial
+        }
         return ariCertId
     }
 }
