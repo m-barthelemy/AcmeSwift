@@ -35,6 +35,7 @@ extension AcmeSwift {
         /// Fetches the latest status of an existing Order.
         /// - Parameters:
         ///   - url: The URL of the Order.
+        /// - Returns: Returns  an `AcmeOrderInfo` for the specified order URL
         public func get(url: URL) async throws -> AcmeOrderInfo {
             try await self.client.ensureLoggedIn()
 
@@ -46,7 +47,7 @@ extension AcmeSwift {
         
         /// Fetches the latest information about an existing Order.
         /// - Parameters:
-        ///   - order: an existing Order object to be updated.
+        ///   - order: an existing `AcmeOrderInfo` object to be updated.
         public func refresh(_ order: inout AcmeOrderInfo) async throws {
             try await self.client.ensureLoggedIn()
             
@@ -64,7 +65,7 @@ extension AcmeSwift {
         ///   - notBefore: Minimum Date when the future certificate will start being valid. **Note:** Let's Encrypt does not support setting this.
         ///   - notAfter: Desired expiration date of the future certificate. **Note:** Let's Encrypt does not support setting this.
         /// - Throws: Errors that can occur when executing the request.
-        /// - Returns: Returns  the `Account`.
+        /// - Returns: Returns  a new `AcmeOrderInfo`.
         public func create(domains: [String], notBefore: Date? = nil, notAfter: Date? = nil) async throws -> AcmeOrderInfo {
             try await self.client.ensureLoggedIn()
             
@@ -92,7 +93,7 @@ extension AcmeSwift {
         ///   - notBefore: Minimum Date when the future certificate will start being valid. **Note:** Let's Encrypt does not support setting this.
         ///   - notAfter: Desired expiration date of the future certificate. **Note:** Let's Encrypt does not support setting this.
         /// - Throws: Errors that can occur when executing the request.
-        /// - Returns: Returns  the `Account`.
+        /// - Returns: Returns  a new `AcmeOrderInfo`.
         public func create(permanentIdentifier: String, notBefore: Date? = nil, notAfter: Date? = nil) async throws -> AcmeOrderInfo {
             try await self.client.ensureLoggedIn()
 
@@ -104,6 +105,49 @@ extension AcmeSwift {
                     identifiers: identifiers,
                     notBefore: notBefore,
                     notAfter: notAfter
+                )
+            )
+
+            var (info, headers) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
+            info.url = URL(string: headers["Location"].first ?? "")
+            return info
+        }
+
+        /// Creates an Order to replace or renew an existing certificate.
+        /// This requires the ACMEv2 server to support the ACME Renewal Information (ARI) feature.
+        /// - Parameters:
+        ///   - certificate: The existing `X509.Certificate` to be renewed or replaced.
+        ///   - domains: If not set, the order will be created for the exact entries present in `certificate`.
+        ///
+        ///     If set, it will replace the entries present in `certificate` but at least one of them needs to be identical. Example: `["*.mydomain.com", "mydomain.com"]`.
+        ///   - notBefore: Minimum Date when the future certificate will start being valid. **Note:** Let's Encrypt does not support setting this.
+        ///   - notAfter: Desired expiration date of the future certificate. **Note:** Let's Encrypt does not support setting this.
+        /// - Throws: Errors that can occur when executing the request.
+        /// - Returns: Returns  a new `AcmeOrderInfo`.
+        public func replace(certificate: X509.Certificate, domains: [String]? = nil, notBefore: Date? = nil, notAfter: Date? = nil) async throws -> AcmeOrderInfo {
+            guard self.client.directory.renewalInfo != nil else {
+                throw AcmeError.unsupportedFeature(\.renewalInfo)
+            }
+
+            var domains = domains ?? []
+            if domains.count == 0, let sans = try certificate.extensions.subjectAlternativeNames {
+                for case let .dnsName(value) in sans {
+                    domains.append(value)
+                }
+            }
+
+            var identifiers: [AcmeOrderSpec.Identifier] = []
+            for domain in domains {
+                identifiers.append(.init(value: domain))
+            }
+
+            let ep = CreateOrderEndpoint(
+                directory: self.client.directory,
+                spec: .init(
+                    identifiers: identifiers,
+                    replaces: try certificate.getARICertId(),
+                    notBefore: notBefore,
+                    notAfter: notAfter,
                 )
             )
 

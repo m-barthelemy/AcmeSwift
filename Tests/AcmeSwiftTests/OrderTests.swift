@@ -116,6 +116,22 @@ final class OrderTests: XCTestCase {
             try certs.joined(separator: "\n").write(to: URL(fileURLWithPath: "cert.pem"), atomically: true, encoding: .utf8)
             
             try key.serializeAsPEM().pemString.write(to: URL(fileURLWithPath: "key.pem"), atomically: true, encoding: .utf8)
+
+            let renewalInfo = try await acme.certificates.getRenewalInfo(certificatePem: certs[0])
+            logger.info("Renewal Info: \(renewalInfo)")
+            let x509 = try Certificate(pemEncoded: certs[0])
+
+            var replaceOrder = try await acme.orders.replace(certificate: x509)
+            var replaceChallenges = try await acme.orders.validateChallenges(from: replaceOrder, preferring: .dnsPersist)
+            for timeout in [5, 10, 10, 10, 10, 30] {
+                guard !replaceChallenges.isEmpty else { break }
+                try await Task.sleep(for: .seconds(timeout))
+                replaceChallenges = try await acme.orders.validateChallenges(from: replaceOrder, preferring: .dnsPersist)
+            }
+            let replaceKey = try await acme.orders.finalize(order: &replaceOrder, type: .ecdsa(.p384))
+            let replaceCerts = try await acme.certificates.download(for: replaceOrder)
+            let replacedX509 = try Certificate(pemEncoded: replaceCerts[0])
+            logger.info("Renewed cert: \(replacedX509)")
         }
         catch(let error) {
             print("\n•••• BOOM! \(error)")
