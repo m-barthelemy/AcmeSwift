@@ -4,8 +4,6 @@
 
 This is an ACME v2 client written in Swift.
 
-It fully uses the Swift concurrency features introduced with Swift 5.5 (`async`/`await`).
-
 
 ## Note
 - This library doesn't handle any ACME challenge at all by itself. Publishing the challenge, either by creating DNS record or exposing the value over HTTP, is out of scope. 
@@ -54,7 +52,7 @@ let acme = try await AcmeSwift(acmeEndpoint: .letsEncryptStaging)
 
 ### Account
 
-- Create a new Let's Encrypt account:
+#### Create a new Let's Encrypt account:
 
 ```swift
 let account = acme.account.create(contacts: ["my.email@domain.com"], validateTOS: true)
@@ -69,7 +67,7 @@ For example, you can encode it to JSON, save it somewhere and then decode it in 
 
 <br/>
 
-- Reuse a previously created account:
+#### Reuse a previously created account:
 
 Option 1: Directly use the object returned by `account.create(...)`
 ```swift
@@ -86,7 +84,7 @@ If you created your account using AcmeSwift, the private key in PEM format is st
 
 <br/>
 
-- Deactivate an existing account:
+#### Deactivate an existing account:
 
 > [!CAUTION]
 > Only use this if you are absolutely certain that the account needs to be permanently deactivated. There is no going back!
@@ -101,7 +99,7 @@ try await acme.account.deactivate()
 
 ### Orders (certificate requests)
 
-Fetch an Order by its URL:
+#### Fetch an Order by its URL:
 ```swift
 let latest = try await acme.orders.get(url: order.url!)
 ```
@@ -109,7 +107,7 @@ let latest = try await acme.orders.get(url: order.url!)
 <br/>
 
 
-Refresh an Order instance with latest information from the server:
+#### Refresh an Order instance with latest information from the server:
 ```swift
 try await acme.orders.refresh(&order)
 ```
@@ -117,7 +115,7 @@ try await acme.orders.refresh(&order)
 <br/>
 
 
-Create an Order for a new certificate:
+#### Create an Order for a new certificate:
 ```swift
  
 var order = try await acme.orders.create(domains: ["mydomain.com", "www.mydomain.com"])
@@ -125,7 +123,7 @@ var order = try await acme.orders.create(domains: ["mydomain.com", "www.mydomain
 
 <br/>
 
-Get the Order authorizations and challenges: 
+#### Get the Order authorizations and challenges: 
 ```swift
 let authorizations = try await acme.orders.getAuthorizations(from: order)
 ```
@@ -150,13 +148,14 @@ Let's Encrypt only allows DNS validation for wildcard certificates.
 
 <br/>
 
-Once the challenges are published, we can ask Let's Encrypt to validate them:
+#### Ask Let's Encrypt to validate the challenges:
 ```swift
 let updatedChallenges = try await acme.orders.validateChallenges(from: order, preferring: .http)
 ```
 
 <br/>
 
+#### Finalize the order
 Once all the authorizations/challenges are valid, we can finalize the Order by sending the CSR in PEM format.
 
 If you already have a CSR:
@@ -185,9 +184,28 @@ print("\n• Private key: \(try privateKey.serializeAsPEM().pemString)")
 
 <br/>
 
+After that you can [download your certificate](#download-a-certificate)
+
+### Renewals (ARI)
+Historically, the ACMEv2 protocol had no such concept, and renewing a certificate was just a matter of creating a new order. 
+While this is still a valid option, a new order counts against Let's Encrypt rate limits, and does not allow to know if certificate should be renewed earlier than anticipated due to an issue on the CA side. 
+[RFC9773](https://www.rfc-editor.org/rfc/rfc9773.html) adds support for certificates renewals, and for obtaining information about the suggested renewal window.
+
+To renew a certificate:
+
+```swift
+var renewOrder = try await acme.orders.replace(certificate: x509)
+
+```
+
+Then treat `renewOrder` as a regular order: grab the challenges, publish them, request their validation, and finalize the order.
+
+<br/>
+
+
 ### Certificates
 
-- Download a certificate:
+#### Download a certificate:
 
 > This assumes that the corresponding Order has been finalized successfully, meaning that the Order `status` field is `valid`.
 
@@ -209,48 +227,31 @@ try certs.joined(separator: "\n")
 
 <br/>
 
-- Revoke a certificate:
+#### Revoke a certificate:
 ```swift
 try await acme.certificates.revoke(certificatePem: "....")
 ```
 
-#### Validating Existing Certificates
+<br/>
 
-Since Let's Encrypt recommends only renewing certificates after 60 days, it's often useful to check existing certificates for validity before requesting a new one:
+#### Check if/when a certificate should be renewed
 
 ```swift
-import NIOSSL
-
-let certURL = URL(fileURLWithPath: "cert.pem").absoluteURL
-let domains = ["*.ponies.com", "ponies.com"]
-logger.notice("Refreshing certificate for \(domains.joined(separator: ", "))")
-
-do {
-    let existingCerts = try NIOSSLCertificate.fromPEMFile(certURL.path(percentEncoded: false))
-    
-    logger.notice("Found existing certificates: \(existingCerts)")
-    if let certificate = existingCerts.first {
-        let expirationDate = Date(timeIntervalSince1970: TimeInterval(certificate.notValidAfter))
-        
-        /// Get the names gregistered in the current certificate to see if they changed
-        let allNames = Set(certificate._subjectAlternativeNames().map { name -> String? in
-            guard case .dnsName = name.nameType else { return nil }
-            return String(decoding: name.contents, as: UTF8.self)
-        }.compactMap { $0 })
-        
-        /// If the expiration date is more than 2 months away and contains all the domains we are interested in, stop renewing.
-        if expirationDate.timeIntervalSinceNow > 60*24*60*60 && allNames.isSuperset(of: domains) {
-            logger.notice("Certificate for \(domains.joined(separator: ", ")) still valid. Expires on \(expirationDate). Renewing on \(expirationDate.advanced(by: -30*24*60*60))")
-            return
-        }
-    }
-} catch {
-    // Catch any errors here to log them, but otherwise continue
-    logger.notice("An issue occured loading existing certificates: \(error)")
+let renewalInfo = try await acme.certificates.getRenewalInfo(certificatePem: ...)
+if renewalInfo.suggestedWindow.start < Date() {
+    print("It's time to renew!")
 }
-
-// ... Continue renewing certificate
+else if let nextCheck = renewalInfo.nextCheck {
+    print("We should be checking again at \(Date().addingTimeInterval(nextCheck))")
+}
 ```
+
+See how to [make a renewal order](#renewals-ari).
+
+> [!NOTE]  
+> If you trigger the renewal within the renewal window, Let's Encrypt rate limits do not apply.
+
+<br/>
 
 ## Example
 
