@@ -198,7 +198,7 @@ var renewOrder = try await acme.orders.replace(certificate: x509)
 
 ```
 
-Then treat `renewOrder` as a regular order: grab the challenges, publish them, request their validation, and finalize the order.
+Then treat `renewOrder` like a regular order: grab the challenges, publish them, request their validation, and finalize the order.
 
 <br/>
 

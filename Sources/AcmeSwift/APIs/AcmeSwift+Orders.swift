@@ -276,16 +276,17 @@ extension AcmeSwift {
         /// - Note: ALPN challenges are not returned.
         /// - Parameters:
         ///   - from: The `AcmeOrderInfo` representing the certificates Order.
-        ///   - preferring: Your preferred challenge validation method. Note: when requesting a wildcard certificate, a challenge will have to be published over DNS regardless of your preferred method.
+        ///   - preferring: Your preferred challenge validation method. If not set, all the possible challenges for all records will be returned.
+        ///     Note: when requesting a wildcard certificate, a challenge will have to be published over DNS regardless of your preferred method.
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  a list of `ChallengeDescription` items that explain what information has to be published in order to validate the challenges.
-        public func describePendingChallenges(from order: AcmeOrderInfo, preferring: AcmeAuthorization.Challenge.ChallengeType) async throws -> [ChallengeDescription] {
-            
+        public func describePendingChallenges(from order: AcmeOrderInfo, preferring: AcmeAuthorization.Challenge.ChallengeType? = nil) async throws -> [ChallengeDescription] {
+
             let accountThumbprint = try getAccountThumbprint()
             let authorizations = try await getAuthorizations(from: order)
             var descs: [ChallengeDescription] = []
             for auth in authorizations where auth.status == .pending {
-                for challenge in auth.challenges where (challenge.type == preferring || auth.wildcard == true) && (challenge.status == .pending || challenge.status == .invalid) {
+                for challenge in auth.challenges where (preferring == nil || challenge.type == preferring || auth.wildcard == true) && (challenge.status == .pending || challenge.status == .invalid) {
 
                     switch challenge.type {
                     case .dns:
@@ -341,7 +342,7 @@ extension AcmeSwift {
                             digest += "; policy=wildcard"
                         }
                         let challengeDesc = ChallengeDescription(
-                            type: preferring,
+                            type: .dnsPersist,
                             endpoint: "_validation-persist.\(auth.identifier.value)",
                             value: digest,
                             token: nil,
@@ -363,6 +364,9 @@ extension AcmeSwift {
                             url: challenge.url
                         )
                         descs.append(challengeDesc)
+
+                    case .alpn:
+                        continue
 
                     default:
                         throw AcmeError.unsupportedChallenge(type: challenge.type)
@@ -386,7 +390,7 @@ extension AcmeSwift {
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  a list of `AcmeAuthorization` containing the challenges that were not validated yet and may be in the process of being validated, or have failed.
         @discardableResult
-        public func validateChallenges(from order: AcmeOrderInfo, preferring: AcmeAuthorization.Challenge.ChallengeType, payload: Codable? = nil) async throws -> [AcmeAuthorization.Challenge] {
+        public func validateChallenges(from order: AcmeOrderInfo, preferring: AcmeAuthorization.Challenge.ChallengeType? = nil, payload: Codable? = nil) async throws -> [AcmeAuthorization.Challenge] {
             // get pending challenges
             let pendingChallenges = try await describePendingChallenges(from: order, preferring: preferring)
             var updatedChallenges: [AcmeAuthorization.Challenge] = []
