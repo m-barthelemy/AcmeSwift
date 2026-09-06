@@ -395,7 +395,7 @@ extension AcmeSwift {
         /// - Throws: Errors that can occur when executing the request.
         /// - Returns: Returns  a list of `AcmeAuthorization` containing the challenges that were not validated yet and may be in the process of being validated, or have failed.
         @discardableResult
-        public func validateChallenges(from order: AcmeOrderInfo, preferring: AcmeAuthorization.Challenge.ChallengeType? = nil, payload: Codable? = nil) async throws -> [AcmeAuthorization.Challenge] {
+        public func validateChallenges(from order: AcmeOrderInfo, preferring: AcmeAuthorization.Challenge.ChallengeType, payload: Codable? = nil) async throws -> [AcmeAuthorization.Challenge] {
             // get pending challenges
             let pendingChallenges = try await describePendingChallenges(from: order, preferring: preferring)
             var updatedChallenges: [AcmeAuthorization.Challenge] = []
