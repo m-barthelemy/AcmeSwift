@@ -28,7 +28,10 @@ public struct AcmeOrderInfo: Sendable {
     
     /// URL to call to obtain the certificate  when the Order has been finalized and has a `valid` status.
     public let certificate: URL?
-    
+
+    /// The ARI CertID if we're trying to renew a previous certificate.
+    public let replaces: String?
+
     
     public enum OrderStatus: String, Codable, Sendable {
         /// The certificate will not be issued. Consider this order process abandoned.

@@ -10,6 +10,7 @@ public struct AcmeDirectory: Sendable {
     public let newOrder: URL
     public let revokeCert: URL
     public let keyChange: URL
+    public let renewalInfo: URL?
     public let meta: Meta?
     
     public struct Meta: Codable, Sendable {

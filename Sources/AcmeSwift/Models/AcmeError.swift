@@ -32,6 +32,12 @@ public enum AcmeError: Error, Sendable {
 
     /// Challenge requires a token but server didn't set any
     case missingChallengeToken
+
+    /// The ACME server's directory does not advertise support for this feature.
+    case unsupportedFeature(KeyPath<AcmeDirectory, URL?> & Sendable)
+
+    /// The Certificate has no AuthorityKeyIdentifier extension (can't check renewal info)
+    case missingAuthorityKeyIdentifier
 }
 
 public struct AcmeResponseError: Error, Sendable {
@@ -123,6 +129,9 @@ public struct AcmeResponseError: Error, Sendable {
         
         /// Visit the "instance" URL and take actions specified there
         case userActionRequired = "urn:ietf:params:acme:error:userActionRequired"
+
+        /// The request specified a predecessor certificate that has already been marked as replaced
+        case alreadyReplaced = "urn:ietf:params:acme:error:alreadyReplaced"
     }
     
     public struct ErrorIdentifier: Codable, Sendable {
@@ -131,6 +140,5 @@ public struct AcmeResponseError: Error, Sendable {
     }
 }
 
-extension AcmeError: Codable {}
 extension AcmeResponseError: Codable {}
 extension AcmeResponseError.AcmeErrorType: Codable {}

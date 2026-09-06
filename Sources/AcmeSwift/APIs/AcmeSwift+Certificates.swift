@@ -1,4 +1,5 @@
 import Foundation
+import X509
 
 extension AcmeSwift {
     /// APIs related to ACMEv2 certificates management.
@@ -34,11 +35,12 @@ extension AcmeSwift {
         
         /// Revokes a previously issued certificate.
         /// - Parameters:
-        ///   - certificatePem: The Certificate **in PEM format**.
-        public func revoke(certificatePem: String, reason: AcmeRevokeReason? = nil) async throws {
+        ///   - pemEncoded: The Certificate **in PEM format**.
+        ///   - reason: An optional justification for the revocation.
+        public func revoke(pemEncoded: String, reason: AcmeRevokeReason? = nil) async throws {
             try await self.client.ensureLoggedIn()
             
-            let csrBytes = certificatePem.pemToData()
+            let csrBytes = pemEncoded.pemToData()
             let pemStr = csrBytes.toBase64UrlString()
             
             let ep = RevokeCertificateEndpoint(
@@ -46,6 +48,42 @@ extension AcmeSwift {
                 spec: .init(certificate: pemStr, reason: reason)
             )
             let (_, _) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
+        }
+
+        /// Gets the Automated Renewal Information for a certificate.
+        /// - Parameters:
+        ///   - certificate: The X509.Certificate.
+        /// - Returns: Returns an `AcmeCertificateRenewalInfo` object with the currently recommended time window to renew the certificate (`suggestedWindow` property).
+        ///
+        ///   If a certificate issued by Let'sEncrypt is renewed during this interval, the renewal is exempted from rate limits.
+        public func getRenewalInfo(for certificate: X509.Certificate) async throws -> AcmeCertificateRenewalInfo {
+            try await self.client.ensureLoggedIn()
+
+            guard var ariURL = self.client.directory.renewalInfo else {
+                throw AcmeError.unsupportedFeature(\.renewalInfo)
+            }
+
+            let ariCertId = try certificate.getARICertId()
+            ariURL.append(path: ariCertId)
+
+            let ep = GetCertificateARIEndpoint(url: ariURL)
+            var (ariInfo, headers) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
+            if let retryAfterRaw = headers["Retry-After"].first, let retryAfterSec = Int(retryAfterRaw) {
+                ariInfo.nextCheck = TimeInterval(retryAfterSec)
+            }
+            
+            return ariInfo
+        }
+
+        /// Gets the Automated Renewal Information for a certificate.
+        /// - Parameters:
+        ///   - pemEncoded: The Certificate **in PEM format**.
+        /// - Returns: Returns an `AcmeCertificateRenewalInfo` object with the currently recommended time window to renew the certificate (`suggestedWindow` property).
+        ///
+        ///   If a certificate issued by Let'sEncrypt is renewed during this interval, the renewal is exempted from rate limits.
+        public func getRenewalInfo(pemEncoded: String) async throws -> AcmeCertificateRenewalInfo {
+            let x509 = try Certificate(pemEncoded: pemEncoded)
+            return try await getRenewalInfo(for: x509)
         }
     }
 }

@@ -1,14 +1,18 @@
 import Foundation
 
 public struct AcmeOrderSpec: Sendable {
-    public init(identifiers: [AcmeOrderSpec.Identifier], notBefore: Date? = nil, notAfter: Date? = nil) {
+    public init(identifiers: [AcmeOrderSpec.Identifier], replaces: String? = nil, notBefore: Date? = nil, notAfter: Date? = nil) {
         self.identifiers = identifiers
         self.notBefore = notBefore
         self.notAfter = notAfter
+        self.replaces = replaces
     }
     
     public var identifiers: [Identifier]
-    
+
+    /// The ARI CertID if we're trying to renew a previous certificate.
+    public var replaces: String?
+
     /// The requested value of the notBefore field in the certificate.
     public var notBefore: Date? = nil
     

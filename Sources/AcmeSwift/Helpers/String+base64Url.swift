@@ -23,7 +23,8 @@ extension String {
             .base64EncodedString()
             .base64ToBase64Url()
     }
-    
+
+    // TODO: can be replaced with .base64EncodedString(options: [.omitPaddingCharacter, .base64URLAlphabet]) in Swift 6.4
     /// Converts a Base64 string to one suitable for use as URL parameters.
     @usableFromInline
     func base64ToBase64Url() -> String {
