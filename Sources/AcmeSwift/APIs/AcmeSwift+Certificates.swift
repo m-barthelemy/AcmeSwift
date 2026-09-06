@@ -35,12 +35,12 @@ extension AcmeSwift {
         
         /// Revokes a previously issued certificate.
         /// - Parameters:
-        ///   - certificatePem: The Certificate **in PEM format**.
+        ///   - pemEncoded: The Certificate **in PEM format**.
         ///   - reason: An optional justification for the revocation.
-        public func revoke(certificatePem: String, reason: AcmeRevokeReason? = nil) async throws {
+        public func revoke(pemEncoded: String, reason: AcmeRevokeReason? = nil) async throws {
             try await self.client.ensureLoggedIn()
             
-            let csrBytes = certificatePem.pemToData()
+            let csrBytes = pemEncoded.pemToData()
             let pemStr = csrBytes.toBase64UrlString()
             
             let ep = RevokeCertificateEndpoint(
@@ -77,12 +77,12 @@ extension AcmeSwift {
 
         /// Gets the Automated Renewal Information for a certificate.
         /// - Parameters:
-        ///   - certificatePem: The Certificate **in PEM format**.
+        ///   - pemEncoded: The Certificate **in PEM format**.
         /// - Returns: Returns an `AcmeCertificateRenewalInfo` object with the currently recommended time window to renew the certificate (`suggestedWindow` property).
         ///
         ///   If a certificate issued by Let'sEncrypt is renewed during this interval, the renewal is exempted from rate limits.
-        public func getRenewalInfo(certificatePem: String) async throws -> AcmeCertificateRenewalInfo {
-            let x509 = try Certificate(pemEncoded: certificatePem)
+        public func getRenewalInfo(pemEncoded: String) async throws -> AcmeCertificateRenewalInfo {
+            let x509 = try Certificate(pemEncoded: pemEncoded)
             return try await getRenewalInfo(for: x509)
         }
     }

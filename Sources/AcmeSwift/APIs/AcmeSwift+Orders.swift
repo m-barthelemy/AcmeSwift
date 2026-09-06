@@ -156,6 +156,23 @@ extension AcmeSwift {
             return info
         }
 
+        /// Creates an Order to replace or renew an existing certificate.
+        /// This requires the ACMEv2 server to support the ACME Renewal Information (ARI) feature.
+        /// - Parameters:
+        ///   - pemEncoded: The existing certificate to be renewed or replaced, in PEM format..
+        ///   - domains: If not set, the order will be created for the exact entries present in `certificate`.
+        ///
+        ///     If set, it will replace the entries present in `certificate` but at least one of them needs to be identical. Example: `["*.mydomain.com", "mydomain.com"]`.
+        ///   - notBefore: Minimum Date when the future certificate will start being valid. **Note:** Let's Encrypt does not support setting this.
+        ///   - notAfter: Desired expiration date of the future certificate. **Note:** Let's Encrypt does not support setting this.
+        /// - Throws: Errors that can occur when executing the request.
+        /// - Returns: Returns  a new `AcmeOrderInfo`.
+        public func replace(pemEncoded: String, domains: [String]? = nil, notBefore: Date? = nil, notAfter: Date? = nil) async throws -> AcmeOrderInfo {
+            let x509 = try X509.Certificate(pemEncoded: pemEncoded)
+            return try await self.replace(certificate: x509)
+        }
+
+
         /// Creates the attestation payload used device-attest-01 challenges
         /// - Parameters:
         ///   - attObj: the base64url string with the WebAuthn attestation object.
