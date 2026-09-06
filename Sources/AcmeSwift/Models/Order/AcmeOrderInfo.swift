@@ -30,7 +30,7 @@ public struct AcmeOrderInfo: Sendable {
     public let certificate: URL?
 
     /// The ARI CertID if we're trying to renew a previous certificate.
-    public var replaces: String?
+    public let replaces: String?
 
     
     public enum OrderStatus: String, Codable, Sendable {
