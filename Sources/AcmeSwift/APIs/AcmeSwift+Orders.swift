@@ -295,6 +295,7 @@ extension AcmeSwift {
                         }
                         let digest = "\(token).\(accountThumbprint.base64URLString)"
                         let challengeDesc = ChallengeDescription(
+                            identifier: auth.identifier.value,
                             type: challenge.type,
                             endpoint: "_acme-challenge.\(auth.identifier.value)",
                             value: SHA256.hash(data: Array(digest.utf8)).base64URLString,
@@ -309,6 +310,7 @@ extension AcmeSwift {
                         }
                         let digest = "\(token).\(accountThumbprint.base64URLString)"
                         let challengeDesc = ChallengeDescription(
+                            identifier: auth.identifier.value,
                             type: challenge.type,
                             endpoint: "http://\(auth.identifier.value)/.well-known/acme-challenge/\(token)",
                             value: digest,
@@ -323,6 +325,7 @@ extension AcmeSwift {
                         }
                         let digest = "\(token).\(accountThumbprint.base64URLString)"
                         let challengeDesc = ChallengeDescription(
+                            identifier: auth.identifier.value,
                             type: challenge.type,
                             endpoint: "",
                             value: digest,
@@ -342,6 +345,7 @@ extension AcmeSwift {
                             digest += "; policy=wildcard"
                         }
                         let challengeDesc = ChallengeDescription(
+                            identifier: auth.identifier.value,
                             type: .dnsPersist,
                             endpoint: "_validation-persist.\(auth.identifier.value)",
                             value: digest,
@@ -357,6 +361,7 @@ extension AcmeSwift {
                         let accountHash = (Data(SHA256.hash(data: Array("\(client.accountURL!)".utf8)))[0...9]).base32String()
                         let digest = "\(token).\(accountThumbprint.base64URLString)"
                         let challengeDesc = ChallengeDescription(
+                            identifier: auth.identifier.value,
                             type: challenge.type,
                             endpoint: "_acme-challenge_\(accountHash).\(auth.identifier.value)",
                             value: SHA256.hash(data: Array(digest.utf8)).base64URLString,
@@ -368,7 +373,7 @@ extension AcmeSwift {
                     case .alpn:
                         continue
 
-                    default:
+                    @unknown default:
                         throw AcmeError.unsupportedChallenge(type: challenge.type)
                     }
                 }
@@ -412,8 +417,9 @@ extension AcmeSwift {
             let (updatedChallenge, _) = try await self.client.run(ep, privateKey: self.client.login!.key, accountURL: client.accountURL!)
             return updatedChallenge
         }
-        
-        private func validateChallenge(url: URL) async throws -> AcmeAuthorization.Challenge {
+
+        /// Validates a single challenge by its URL.
+        public func validateChallenge(url: URL) async throws -> AcmeAuthorization.Challenge {
             try await self.client.ensureLoggedIn()
             
             let ep = ValidateChallengeEndpoint(challengeURL: url)

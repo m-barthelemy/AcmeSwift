@@ -1,6 +1,9 @@
 import Foundation
 
 public struct ChallengeDescription: Sendable {
+    /// The identifier that is part of the certificate order for which we have a challenge.
+    public let identifier: String
+    
     /// The type of challenge.
     /// For a wildcard certificate, there will **always** be a at least one DNS challenge, even if your preferred method is HTTP.
     public let type: AcmeAuthorization.Challenge.ChallengeType
@@ -18,7 +21,7 @@ public struct ChallengeDescription: Sendable {
     public let token: String?
 
     /// The ACMEv2 server URL for validating this challenge
-    internal let url: URL
+    public let url: URL
 }
 
 extension ChallengeDescription: Codable {}
